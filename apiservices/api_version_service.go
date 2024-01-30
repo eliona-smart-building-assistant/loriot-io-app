@@ -19,9 +19,9 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"loriot-io/apiserver"
 	"net/http"
 	"os"
-	"template/apiserver"
 
 	"github.com/eliona-smart-building-assistant/go-utils/common"
 	"github.com/eliona-smart-building-assistant/go-utils/log"

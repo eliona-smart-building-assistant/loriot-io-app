@@ -17,13 +17,13 @@ package main
 
 import (
 	"context"
+	"loriot-io/apiserver"
+	"loriot-io/apiservices"
+	"loriot-io/appdb"
+	"loriot-io/conf"
+	"loriot-io/eliona"
 	"net/http"
 	"sync"
-	"template/apiserver"
-	"template/apiservices"
-	"template/appdb"
-	"template/conf"
-	"template/eliona"
 	"time"
 
 	"github.com/eliona-smart-building-assistant/go-eliona/frontend"

@@ -17,7 +17,7 @@ package broker
 
 import (
 	"fmt"
-	"template/apiserver"
+	"loriot-io/apiserver"
 
 	"github.com/eliona-smart-building-assistant/go-eliona/utils"
 	"github.com/eliona-smart-building-assistant/go-utils/common"

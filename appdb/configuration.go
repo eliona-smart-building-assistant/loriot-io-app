@@ -25,62 +25,67 @@ import (
 
 // Configuration is an object representing the database table.
 type Configuration struct {
-	ID                int64             `boil:"id" json:"id" toml:"id" yaml:"id"`
-	APIAccessChangeMe string            `boil:"api_access_change_me" json:"api_access_change_me" toml:"api_access_change_me" yaml:"api_access_change_me"`
-	RefreshInterval   int32             `boil:"refresh_interval" json:"refresh_interval" toml:"refresh_interval" yaml:"refresh_interval"`
-	RequestTimeout    int32             `boil:"request_timeout" json:"request_timeout" toml:"request_timeout" yaml:"request_timeout"`
-	AssetFilter       null.JSON         `boil:"asset_filter" json:"asset_filter,omitempty" toml:"asset_filter" yaml:"asset_filter,omitempty"`
-	Active            null.Bool         `boil:"active" json:"active,omitempty" toml:"active" yaml:"active,omitempty"`
-	Enable            null.Bool         `boil:"enable" json:"enable,omitempty" toml:"enable" yaml:"enable,omitempty"`
-	ProjectIds        types.StringArray `boil:"project_ids" json:"project_ids,omitempty" toml:"project_ids" yaml:"project_ids,omitempty"`
-	UserID            null.String       `boil:"user_id" json:"user_id,omitempty" toml:"user_id" yaml:"user_id,omitempty"`
+	ID              int64             `boil:"id" json:"id" toml:"id" yaml:"id"`
+	APIBaseURL      string            `boil:"api_base_url" json:"api_base_url" toml:"api_base_url" yaml:"api_base_url"`
+	APIToken        string            `boil:"api_token" json:"api_token" toml:"api_token" yaml:"api_token"`
+	RefreshInterval int32             `boil:"refresh_interval" json:"refresh_interval" toml:"refresh_interval" yaml:"refresh_interval"`
+	RequestTimeout  int32             `boil:"request_timeout" json:"request_timeout" toml:"request_timeout" yaml:"request_timeout"`
+	AssetFilter     null.JSON         `boil:"asset_filter" json:"asset_filter,omitempty" toml:"asset_filter" yaml:"asset_filter,omitempty"`
+	Active          null.Bool         `boil:"active" json:"active,omitempty" toml:"active" yaml:"active,omitempty"`
+	Enable          null.Bool         `boil:"enable" json:"enable,omitempty" toml:"enable" yaml:"enable,omitempty"`
+	ProjectIds      types.StringArray `boil:"project_ids" json:"project_ids,omitempty" toml:"project_ids" yaml:"project_ids,omitempty"`
+	UserID          null.String       `boil:"user_id" json:"user_id,omitempty" toml:"user_id" yaml:"user_id,omitempty"`
 
 	R *configurationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L configurationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ConfigurationColumns = struct {
-	ID                string
-	APIAccessChangeMe string
-	RefreshInterval   string
-	RequestTimeout    string
-	AssetFilter       string
-	Active            string
-	Enable            string
-	ProjectIds        string
-	UserID            string
+	ID              string
+	APIBaseURL      string
+	APIToken        string
+	RefreshInterval string
+	RequestTimeout  string
+	AssetFilter     string
+	Active          string
+	Enable          string
+	ProjectIds      string
+	UserID          string
 }{
-	ID:                "id",
-	APIAccessChangeMe: "api_access_change_me",
-	RefreshInterval:   "refresh_interval",
-	RequestTimeout:    "request_timeout",
-	AssetFilter:       "asset_filter",
-	Active:            "active",
-	Enable:            "enable",
-	ProjectIds:        "project_ids",
-	UserID:            "user_id",
+	ID:              "id",
+	APIBaseURL:      "api_base_url",
+	APIToken:        "api_token",
+	RefreshInterval: "refresh_interval",
+	RequestTimeout:  "request_timeout",
+	AssetFilter:     "asset_filter",
+	Active:          "active",
+	Enable:          "enable",
+	ProjectIds:      "project_ids",
+	UserID:          "user_id",
 }
 
 var ConfigurationTableColumns = struct {
-	ID                string
-	APIAccessChangeMe string
-	RefreshInterval   string
-	RequestTimeout    string
-	AssetFilter       string
-	Active            string
-	Enable            string
-	ProjectIds        string
-	UserID            string
+	ID              string
+	APIBaseURL      string
+	APIToken        string
+	RefreshInterval string
+	RequestTimeout  string
+	AssetFilter     string
+	Active          string
+	Enable          string
+	ProjectIds      string
+	UserID          string
 }{
-	ID:                "configuration.id",
-	APIAccessChangeMe: "configuration.api_access_change_me",
-	RefreshInterval:   "configuration.refresh_interval",
-	RequestTimeout:    "configuration.request_timeout",
-	AssetFilter:       "configuration.asset_filter",
-	Active:            "configuration.active",
-	Enable:            "configuration.enable",
-	ProjectIds:        "configuration.project_ids",
-	UserID:            "configuration.user_id",
+	ID:              "configuration.id",
+	APIBaseURL:      "configuration.api_base_url",
+	APIToken:        "configuration.api_token",
+	RefreshInterval: "configuration.refresh_interval",
+	RequestTimeout:  "configuration.request_timeout",
+	AssetFilter:     "configuration.asset_filter",
+	Active:          "configuration.active",
+	Enable:          "configuration.enable",
+	ProjectIds:      "configuration.project_ids",
+	UserID:          "configuration.user_id",
 }
 
 // Generated where
@@ -233,25 +238,27 @@ func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereI
 func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var ConfigurationWhere = struct {
-	ID                whereHelperint64
-	APIAccessChangeMe whereHelperstring
-	RefreshInterval   whereHelperint32
-	RequestTimeout    whereHelperint32
-	AssetFilter       whereHelpernull_JSON
-	Active            whereHelpernull_Bool
-	Enable            whereHelpernull_Bool
-	ProjectIds        whereHelpertypes_StringArray
-	UserID            whereHelpernull_String
+	ID              whereHelperint64
+	APIBaseURL      whereHelperstring
+	APIToken        whereHelperstring
+	RefreshInterval whereHelperint32
+	RequestTimeout  whereHelperint32
+	AssetFilter     whereHelpernull_JSON
+	Active          whereHelpernull_Bool
+	Enable          whereHelpernull_Bool
+	ProjectIds      whereHelpertypes_StringArray
+	UserID          whereHelpernull_String
 }{
-	ID:                whereHelperint64{field: "\"template\".\"configuration\".\"id\""},
-	APIAccessChangeMe: whereHelperstring{field: "\"template\".\"configuration\".\"api_access_change_me\""},
-	RefreshInterval:   whereHelperint32{field: "\"template\".\"configuration\".\"refresh_interval\""},
-	RequestTimeout:    whereHelperint32{field: "\"template\".\"configuration\".\"request_timeout\""},
-	AssetFilter:       whereHelpernull_JSON{field: "\"template\".\"configuration\".\"asset_filter\""},
-	Active:            whereHelpernull_Bool{field: "\"template\".\"configuration\".\"active\""},
-	Enable:            whereHelpernull_Bool{field: "\"template\".\"configuration\".\"enable\""},
-	ProjectIds:        whereHelpertypes_StringArray{field: "\"template\".\"configuration\".\"project_ids\""},
-	UserID:            whereHelpernull_String{field: "\"template\".\"configuration\".\"user_id\""},
+	ID:              whereHelperint64{field: "\"loriot_io\".\"configuration\".\"id\""},
+	APIBaseURL:      whereHelperstring{field: "\"loriot_io\".\"configuration\".\"api_base_url\""},
+	APIToken:        whereHelperstring{field: "\"loriot_io\".\"configuration\".\"api_token\""},
+	RefreshInterval: whereHelperint32{field: "\"loriot_io\".\"configuration\".\"refresh_interval\""},
+	RequestTimeout:  whereHelperint32{field: "\"loriot_io\".\"configuration\".\"request_timeout\""},
+	AssetFilter:     whereHelpernull_JSON{field: "\"loriot_io\".\"configuration\".\"asset_filter\""},
+	Active:          whereHelpernull_Bool{field: "\"loriot_io\".\"configuration\".\"active\""},
+	Enable:          whereHelpernull_Bool{field: "\"loriot_io\".\"configuration\".\"enable\""},
+	ProjectIds:      whereHelpertypes_StringArray{field: "\"loriot_io\".\"configuration\".\"project_ids\""},
+	UserID:          whereHelpernull_String{field: "\"loriot_io\".\"configuration\".\"user_id\""},
 }
 
 // ConfigurationRels is where relationship names are stored.
@@ -282,8 +289,8 @@ func (r *configurationR) GetAssets() AssetSlice {
 type configurationL struct{}
 
 var (
-	configurationAllColumns            = []string{"id", "api_access_change_me", "refresh_interval", "request_timeout", "asset_filter", "active", "enable", "project_ids", "user_id"}
-	configurationColumnsWithoutDefault = []string{"api_access_change_me"}
+	configurationAllColumns            = []string{"id", "api_base_url", "api_token", "refresh_interval", "request_timeout", "asset_filter", "active", "enable", "project_ids", "user_id"}
+	configurationColumnsWithoutDefault = []string{"api_base_url", "api_token"}
 	configurationColumnsWithDefault    = []string{"id", "refresh_interval", "request_timeout", "asset_filter", "active", "enable", "project_ids", "user_id"}
 	configurationPrimaryKeyColumns     = []string{"id"}
 	configurationGeneratedColumns      = []string{}
@@ -622,7 +629,7 @@ func (o *Configuration) Assets(mods ...qm.QueryMod) assetQuery {
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"template\".\"asset\".\"configuration_id\"=?", o.ID),
+		qm.Where("\"loriot_io\".\"asset\".\"configuration_id\"=?", o.ID),
 	)
 
 	return Assets(queryMods...)
@@ -683,8 +690,8 @@ func (configurationL) LoadAssets(ctx context.Context, e boil.ContextExecutor, si
 	}
 
 	query := NewQuery(
-		qm.From(`template.asset`),
-		qm.WhereIn(`template.asset.configuration_id in ?`, argsSlice...),
+		qm.From(`loriot_io.asset`),
+		qm.WhereIn(`loriot_io.asset.configuration_id in ?`, argsSlice...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -764,7 +771,7 @@ func (o *Configuration) AddAssets(ctx context.Context, exec boil.ContextExecutor
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"template\".\"asset\" SET %s WHERE %s",
+				"UPDATE \"loriot_io\".\"asset\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"configuration_id"}),
 				strmangle.WhereClause("\"", "\"", 2, assetPrimaryKeyColumns),
 			)
@@ -805,10 +812,10 @@ func (o *Configuration) AddAssets(ctx context.Context, exec boil.ContextExecutor
 
 // Configurations retrieves all the records using an executor.
 func Configurations(mods ...qm.QueryMod) configurationQuery {
-	mods = append(mods, qm.From("\"template\".\"configuration\""))
+	mods = append(mods, qm.From("\"loriot_io\".\"configuration\""))
 	q := NewQuery(mods...)
 	if len(queries.GetSelect(q)) == 0 {
-		queries.SetSelect(q, []string{"\"template\".\"configuration\".*"})
+		queries.SetSelect(q, []string{"\"loriot_io\".\"configuration\".*"})
 	}
 
 	return configurationQuery{q}
@@ -829,7 +836,7 @@ func FindConfiguration(ctx context.Context, exec boil.ContextExecutor, iD int64,
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"template\".\"configuration\" where \"id\"=$1", sel,
+		"select %s from \"loriot_io\".\"configuration\" where \"id\"=$1", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -891,9 +898,9 @@ func (o *Configuration) Insert(ctx context.Context, exec boil.ContextExecutor, c
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"template\".\"configuration\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"loriot_io\".\"configuration\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"template\".\"configuration\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO \"loriot_io\".\"configuration\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -965,7 +972,7 @@ func (o *Configuration) Update(ctx context.Context, exec boil.ContextExecutor, c
 			return 0, errors.New("appdb: unable to update configuration, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"template\".\"configuration\" SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE \"loriot_io\".\"configuration\" SET %s WHERE %s",
 			strmangle.SetParamNames("\"", "\"", 1, wl),
 			strmangle.WhereClause("\"", "\"", len(wl)+1, configurationPrimaryKeyColumns),
 		)
@@ -1056,7 +1063,7 @@ func (o ConfigurationSlice) UpdateAll(ctx context.Context, exec boil.ContextExec
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"template\".\"configuration\" SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE \"loriot_io\".\"configuration\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, configurationPrimaryKeyColumns, len(o)))
 
@@ -1157,7 +1164,7 @@ func (o *Configuration) Upsert(ctx context.Context, exec boil.ContextExecutor, u
 			conflict = make([]string, len(configurationPrimaryKeyColumns))
 			copy(conflict, configurationPrimaryKeyColumns)
 		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"template\".\"configuration\"", updateOnConflict, ret, update, conflict, insert, opts...)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"loriot_io\".\"configuration\"", updateOnConflict, ret, update, conflict, insert, opts...)
 
 		cache.valueMapping, err = queries.BindMapping(configurationType, configurationMapping, insert)
 		if err != nil {
@@ -1222,7 +1229,7 @@ func (o *Configuration) Delete(ctx context.Context, exec boil.ContextExecutor) (
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), configurationPrimaryKeyMapping)
-	sql := "DELETE FROM \"template\".\"configuration\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"loriot_io\".\"configuration\" WHERE \"id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1296,7 +1303,7 @@ func (o ConfigurationSlice) DeleteAll(ctx context.Context, exec boil.ContextExec
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"template\".\"configuration\" WHERE " +
+	sql := "DELETE FROM \"loriot_io\".\"configuration\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, configurationPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
@@ -1370,7 +1377,7 @@ func (o *ConfigurationSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"template\".\"configuration\".* FROM \"template\".\"configuration\" WHERE " +
+	sql := "SELECT \"loriot_io\".\"configuration\".* FROM \"loriot_io\".\"configuration\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, configurationPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
@@ -1393,7 +1400,7 @@ func ConfigurationExistsG(ctx context.Context, iD int64) (bool, error) {
 // ConfigurationExists checks if the Configuration row exists.
 func ConfigurationExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"template\".\"configuration\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"loriot_io\".\"configuration\" where \"id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

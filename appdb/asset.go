@@ -28,7 +28,8 @@ type Asset struct {
 	ConfigurationID int64      `boil:"configuration_id" json:"configuration_id" toml:"configuration_id" yaml:"configuration_id"`
 	ProjectID       string     `boil:"project_id" json:"project_id" toml:"project_id" yaml:"project_id"`
 	GlobalAssetID   string     `boil:"global_asset_id" json:"global_asset_id" toml:"global_asset_id" yaml:"global_asset_id"`
-	ProviderID      string     `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
+	DevEui          string     `boil:"dev_eui" json:"dev_eui" toml:"dev_eui" yaml:"dev_eui"`
+	AppID           string     `boil:"app_id" json:"app_id" toml:"app_id" yaml:"app_id"`
 	AssetID         null.Int32 `boil:"asset_id" json:"asset_id,omitempty" toml:"asset_id" yaml:"asset_id,omitempty"`
 
 	R *assetR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -40,14 +41,16 @@ var AssetColumns = struct {
 	ConfigurationID string
 	ProjectID       string
 	GlobalAssetID   string
-	ProviderID      string
+	DevEui          string
+	AppID           string
 	AssetID         string
 }{
 	ID:              "id",
 	ConfigurationID: "configuration_id",
 	ProjectID:       "project_id",
 	GlobalAssetID:   "global_asset_id",
-	ProviderID:      "provider_id",
+	DevEui:          "dev_eui",
+	AppID:           "app_id",
 	AssetID:         "asset_id",
 }
 
@@ -56,14 +59,16 @@ var AssetTableColumns = struct {
 	ConfigurationID string
 	ProjectID       string
 	GlobalAssetID   string
-	ProviderID      string
+	DevEui          string
+	AppID           string
 	AssetID         string
 }{
 	ID:              "asset.id",
 	ConfigurationID: "asset.configuration_id",
 	ProjectID:       "asset.project_id",
 	GlobalAssetID:   "asset.global_asset_id",
-	ProviderID:      "asset.provider_id",
+	DevEui:          "asset.dev_eui",
+	AppID:           "asset.app_id",
 	AssetID:         "asset.asset_id",
 }
 
@@ -162,15 +167,17 @@ var AssetWhere = struct {
 	ConfigurationID whereHelperint64
 	ProjectID       whereHelperstring
 	GlobalAssetID   whereHelperstring
-	ProviderID      whereHelperstring
+	DevEui          whereHelperstring
+	AppID           whereHelperstring
 	AssetID         whereHelpernull_Int32
 }{
-	ID:              whereHelperint64{field: "\"template\".\"asset\".\"id\""},
-	ConfigurationID: whereHelperint64{field: "\"template\".\"asset\".\"configuration_id\""},
-	ProjectID:       whereHelperstring{field: "\"template\".\"asset\".\"project_id\""},
-	GlobalAssetID:   whereHelperstring{field: "\"template\".\"asset\".\"global_asset_id\""},
-	ProviderID:      whereHelperstring{field: "\"template\".\"asset\".\"provider_id\""},
-	AssetID:         whereHelpernull_Int32{field: "\"template\".\"asset\".\"asset_id\""},
+	ID:              whereHelperint64{field: "\"loriot_io\".\"asset\".\"id\""},
+	ConfigurationID: whereHelperint64{field: "\"loriot_io\".\"asset\".\"configuration_id\""},
+	ProjectID:       whereHelperstring{field: "\"loriot_io\".\"asset\".\"project_id\""},
+	GlobalAssetID:   whereHelperstring{field: "\"loriot_io\".\"asset\".\"global_asset_id\""},
+	DevEui:          whereHelperstring{field: "\"loriot_io\".\"asset\".\"dev_eui\""},
+	AppID:           whereHelperstring{field: "\"loriot_io\".\"asset\".\"app_id\""},
+	AssetID:         whereHelpernull_Int32{field: "\"loriot_io\".\"asset\".\"asset_id\""},
 }
 
 // AssetRels is where relationship names are stored.
@@ -201,8 +208,8 @@ func (r *assetR) GetConfiguration() *Configuration {
 type assetL struct{}
 
 var (
-	assetAllColumns            = []string{"id", "configuration_id", "project_id", "global_asset_id", "provider_id", "asset_id"}
-	assetColumnsWithoutDefault = []string{"project_id", "global_asset_id", "provider_id"}
+	assetAllColumns            = []string{"id", "configuration_id", "project_id", "global_asset_id", "dev_eui", "app_id", "asset_id"}
+	assetColumnsWithoutDefault = []string{"project_id", "global_asset_id", "dev_eui", "app_id"}
 	assetColumnsWithDefault    = []string{"id", "configuration_id", "asset_id"}
 	assetPrimaryKeyColumns     = []string{"id"}
 	assetGeneratedColumns      = []string{}
@@ -602,8 +609,8 @@ func (assetL) LoadConfiguration(ctx context.Context, e boil.ContextExecutor, sin
 	}
 
 	query := NewQuery(
-		qm.From(`template.configuration`),
-		qm.WhereIn(`template.configuration.id in ?`, argsSlice...),
+		qm.From(`loriot_io.configuration`),
+		qm.WhereIn(`loriot_io.configuration.id in ?`, argsSlice...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -684,7 +691,7 @@ func (o *Asset) SetConfiguration(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"template\".\"asset\" SET %s WHERE %s",
+		"UPDATE \"loriot_io\".\"asset\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, []string{"configuration_id"}),
 		strmangle.WhereClause("\"", "\"", 2, assetPrimaryKeyColumns),
 	)
@@ -721,10 +728,10 @@ func (o *Asset) SetConfiguration(ctx context.Context, exec boil.ContextExecutor,
 
 // Assets retrieves all the records using an executor.
 func Assets(mods ...qm.QueryMod) assetQuery {
-	mods = append(mods, qm.From("\"template\".\"asset\""))
+	mods = append(mods, qm.From("\"loriot_io\".\"asset\""))
 	q := NewQuery(mods...)
 	if len(queries.GetSelect(q)) == 0 {
-		queries.SetSelect(q, []string{"\"template\".\"asset\".*"})
+		queries.SetSelect(q, []string{"\"loriot_io\".\"asset\".*"})
 	}
 
 	return assetQuery{q}
@@ -745,7 +752,7 @@ func FindAsset(ctx context.Context, exec boil.ContextExecutor, iD int64, selectC
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"template\".\"asset\" where \"id\"=$1", sel,
+		"select %s from \"loriot_io\".\"asset\" where \"id\"=$1", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -807,9 +814,9 @@ func (o *Asset) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"template\".\"asset\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"loriot_io\".\"asset\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"template\".\"asset\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO \"loriot_io\".\"asset\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -881,7 +888,7 @@ func (o *Asset) Update(ctx context.Context, exec boil.ContextExecutor, columns b
 			return 0, errors.New("appdb: unable to update asset, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"template\".\"asset\" SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE \"loriot_io\".\"asset\" SET %s WHERE %s",
 			strmangle.SetParamNames("\"", "\"", 1, wl),
 			strmangle.WhereClause("\"", "\"", len(wl)+1, assetPrimaryKeyColumns),
 		)
@@ -972,7 +979,7 @@ func (o AssetSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, co
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"template\".\"asset\" SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE \"loriot_io\".\"asset\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, colNames),
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, assetPrimaryKeyColumns, len(o)))
 
@@ -1073,7 +1080,7 @@ func (o *Asset) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 			conflict = make([]string, len(assetPrimaryKeyColumns))
 			copy(conflict, assetPrimaryKeyColumns)
 		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"template\".\"asset\"", updateOnConflict, ret, update, conflict, insert, opts...)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"loriot_io\".\"asset\"", updateOnConflict, ret, update, conflict, insert, opts...)
 
 		cache.valueMapping, err = queries.BindMapping(assetType, assetMapping, insert)
 		if err != nil {
@@ -1138,7 +1145,7 @@ func (o *Asset) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, e
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), assetPrimaryKeyMapping)
-	sql := "DELETE FROM \"template\".\"asset\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"loriot_io\".\"asset\" WHERE \"id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1212,7 +1219,7 @@ func (o AssetSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (i
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"template\".\"asset\" WHERE " +
+	sql := "DELETE FROM \"loriot_io\".\"asset\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, assetPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
@@ -1286,7 +1293,7 @@ func (o *AssetSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) e
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"template\".\"asset\".* FROM \"template\".\"asset\" WHERE " +
+	sql := "SELECT \"loriot_io\".\"asset\".* FROM \"loriot_io\".\"asset\" WHERE " +
 		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, assetPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
@@ -1309,7 +1316,7 @@ func AssetExistsG(ctx context.Context, iD int64) (bool, error) {
 // AssetExists checks if the Asset row exists.
 func AssetExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"template\".\"asset\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"loriot_io\".\"asset\" where \"id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

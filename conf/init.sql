@@ -13,13 +13,14 @@
 --  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 --  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-create schema if not exists template;
+create schema if not exists loriot_io;
 
 -- Should be editable by eliona frontend.
-create table if not exists template.configuration
+create table if not exists loriot_io.configuration
 (
 	id                   bigserial primary key,
-	api_access_change_me text not null,
+	api_base_url         text not null,
+    api_token            text not null,
 	refresh_interval     integer not null default 60,
 	request_timeout      integer not null default 120,
 	asset_filter         json,
@@ -29,14 +30,15 @@ create table if not exists template.configuration
 	user_id              text
 );
 
-create table if not exists template.asset
+create table if not exists loriot_io.asset
 (
 	id               bigserial primary key,
-	configuration_id bigserial not null references template.configuration(id) ON DELETE CASCADE,
+	configuration_id bigserial not null references loriot_io.configuration(id) ON DELETE CASCADE,
 	project_id       text      not null,
 	global_asset_id  text      not null,
-	provider_id      text      not null,
-	asset_id         integer
+    dev_eui          text      not null,
+    app_id           text      not null,
+    asset_id         integer
 );
 
 -- Makes the new objects available for all other init steps

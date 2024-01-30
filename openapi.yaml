@@ -17,29 +17,40 @@ openapi: 3.0.3
 
 info:
   version: 1.0.0
-  title: App template API
-  description: API to access and configure the app template
+  title: Loriot.io app API
+  description: API to access and configure the Loriot.io app
 externalDocs:
-  description: Find out more about the app template
-  url: https://github.com/eliona-smart-building-assistant/app-template
+  description: Find out more about the Loriot.io app
+  url: https://github.com/eliona-smart-building-assistant/loriot-io-app
 servers:
-  - url: http://template/v1
-
+  - url: "https://{server}/v1"
+    variables:
+      server:
+        default: loriot-io
+  - url: "https://{environment}.eliona.io/apps/loriot-io/api/v1"
+    variables:
+      environment:
+        default: name
 tags:
   - name: Configuration
     description: Configure the app
     externalDocs:
-      url: https://github.com/eliona-smart-building-assistant/app-template
+      url: https://github.com/eliona-smart-building-assistant/loriot-io-app
+
+  - name: Devices
+    description: Handle Loriot.io devices
+    externalDocs:
+      url: https://docs.loriot.io/
 
   - name: Version
     description: API version
     externalDocs:
-      url: https://github.com/eliona-smart-building-assistant/app-template
+      url: https://github.com/eliona-smart-building-assistant/loriot-io-app
 
   - name: Customization
     description: Help to customize Eliona environment
     externalDocs:
-      url: https://github.com/eliona-smart-building-assistant/app-template
+      url: https://github.com/eliona-smart-building-assistant/loriot-io-app
 
 paths:
   /configs:
@@ -128,6 +139,57 @@ paths:
           description: Successfully deleted configured configuration
         "400":
           description: Bad request
+
+
+  /devices:
+    get:
+      tags:
+        - Devices
+      summary: Get LoRaWAN devices
+      description: Gets information about all LoRaWAN devices handled by the Loriot.io app
+      operationId: getDevices
+      responses:
+        "200":
+          description: Successfully returned all devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Device"
+    post:
+      tags:
+        - Devices
+      summary: Creates a new LoRaWAN device
+      description:
+        Creates a new LoRaWAN device handled by the Loriot.io app.
+        This also creates an asset if one does not already exist.
+      operationId: postDevice
+      parameters:
+        - in: query
+          name: type
+          required: false
+          schema:
+            type: string
+            enum: [otaa10, otaa11, abp10, abp11]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/NewDeviceOTAA10'
+                - $ref: '#/components/schemas/NewDeviceOTAA11'
+                - $ref: '#/components/schemas/NewDeviceABP10'
+                - $ref: '#/components/schemas/NewDeviceABP11'
+      responses:
+        "200":
+          description: Successfully created a LoRaWAN devices and a corresponding Eliona assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Device"
 
   /version:
     get:
@@ -218,11 +280,14 @@ components:
           description: Internal identifier for the configured API (created automatically).
           readOnly: true
           nullable: true
-        apiAccessChangeMe:
+        apiBaseUrl:
           type: string
-          format: string
-          description: There should be things like API address, access keys and so on.
-          example: 10.10.10.101
+          description: API base URL
+          example: https://eu1.loriot.io
+        apiToken:
+          type: string
+          description: API Bearer token
+          example: secret
         enable:
           type: boolean
           description: Flag to enable or disable fetching from this API
@@ -239,13 +304,6 @@ components:
           nullable: true
         assetFilter:
           $ref: "#/components/schemas/AssetFilter"
-          nullable: true
-          example:
-            [
-              [{ "parameter": "deviceName", "regex": "Main.*" }, { "parameter": "deviceType", "regex": "110" }],
-              [{ "parameter": "macAddress", "regex": "(70:82:0e:12:28:cc|70:56:06:12:.*)" }],
-              [{ "parameter": "ipAddress", "regex": "192\\.168\\..*" }],
-            ]
         active:
           type: boolean
           readOnly: true
@@ -267,6 +325,131 @@ components:
           nullable: true
           example: "90"
 
+    Device:
+      type: object
+      description: LoRaWAN device handled by the Loriot.io app
+      properties:
+        configID:
+          type: string
+          description: App configs defining the Loriot.io target the device belongs to
+          nullable: true
+        projectID:
+          type: string
+          description: Eliona project ID the asset belongs to
+          nullable: true
+        globalAssetIdentifier:
+          type: string
+          description: Unique identifier for the asset
+          example: loriot_dev
+          nullable: false
+        appId:
+          type: string
+          description: Application hexadecimal (uppercase) ID for Loriot
+          nullable: false
+        devEUI:
+          type: string
+          description: Global ID in IEEE EUI64 address space that uniquely identifies the device
+          nullable: false
+        assetID:
+          type: string
+          description: corresponding asset ID
+          nullable: true
+
+    NewDevice:
+      type: object
+      required:
+        - devEUI
+        - appID
+        - assetTypeName
+      properties:
+        devEUI:
+          type: string
+          description: Global ID in IEEE EUI64 address space that uniquely identifies the device
+          nullable: false
+        appID:
+          type: string
+          description: Application hexadecimal (uppercase) ID for Loriot
+          nullable: false
+        assetTypeName:
+          type: string
+          description: Name of the asset type to create corresponding asset in Eliona
+          nullable: false
+        configID:
+          type: string
+          description: Configuration id to define the target Loriot.io. If empty all configs are used.
+          nullable: true
+        title:
+          type: string
+          description: Title for the new device and asset
+          nullable: true
+        description:
+          type: string
+          description: Description for the new device and asset
+          nullable: true
+
+    NewDeviceOTAA10:
+      allOf:
+        - $ref: '#/components/schemas/NewDevice'
+        - properties:
+            appEUI:
+              type: string
+            appKey:
+              type: string
+          type: object
+
+    NewDeviceOTAA11:
+      allOf:
+        - $ref: '#/components/schemas/NewDevice'
+        - properties:
+            joinEUI:
+              type: string
+            appKey:
+              type: string
+            devClass:
+              type: string
+            nwkKey:
+              type: string
+
+    NewDeviceABP10:
+      allOf:
+        - $ref: '#/components/schemas/NewDevice'
+        - properties:
+            devAddr:
+              type: string
+            seqNo:
+              type: string
+            seqDN:
+              type: string
+            nwkSKey:
+              type: string
+            appSKey:
+              type: string
+
+    NewDeviceABP11:
+      allOf:
+        - $ref: '#/components/schemas/NewDevice'
+        - properties:
+            netID:
+              type: string
+            seqNo:
+              type: string
+            devClass:
+              type: string
+            devAddr:
+              type: string
+            appSKey:
+              type: string
+            nfcNtDwn:
+              type: string
+            afcNtDwn:
+              type: string
+            fNwkSIntKey:
+              type: string
+            sNwkSIntKey:
+              type: string
+            nwkSEncKey:
+              type: string
+
     AssetFilter:
       type: array
       description: Array of rules combined by logical OR
@@ -282,7 +465,7 @@ components:
       properties:
         parameter:
           type: string
-          example: "name"
+          example: "appId"
         regex:
           type: string
-          example: "^first_floor_.*$"
+          example: "^ABC.*$"

@@ -18,9 +18,9 @@ package apiservices
 import (
 	"context"
 	"errors"
+	"loriot-io/apiserver"
+	"loriot-io/conf"
 	"net/http"
-	"template/apiserver"
-	"template/conf"
 )
 
 // ConfigurationApiService is a service that implements the logic for the ConfigurationApiServicer

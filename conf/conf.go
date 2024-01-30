@@ -20,8 +20,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"template/apiserver"
-	"template/appdb"
+	"loriot-io/apiserver"
+	"loriot-io/appdb"
 
 	"github.com/eliona-smart-building-assistant/go-eliona/frontend"
 	"github.com/eliona-smart-building-assistant/go-utils/common"
@@ -92,7 +92,8 @@ func DeleteConfig(ctx context.Context, configID int64) error {
 }
 
 func dbConfigFromApiConfig(ctx context.Context, apiConfig apiserver.Configuration) (dbConfig appdb.Configuration, err error) {
-	dbConfig.APIAccessChangeMe = apiConfig.ApiAccessChangeMe
+	dbConfig.APIBaseURL = apiConfig.ApiBaseUrl
+	dbConfig.APIToken = apiConfig.ApiToken
 
 	dbConfig.ID = null.Int64FromPtr(apiConfig.Id).Int64
 	dbConfig.Enable = null.BoolFromPtr(apiConfig.Enable)
@@ -119,7 +120,8 @@ func dbConfigFromApiConfig(ctx context.Context, apiConfig apiserver.Configuratio
 }
 
 func apiConfigFromDbConfig(dbConfig *appdb.Configuration) (apiConfig apiserver.Configuration, err error) {
-	apiConfig.ApiAccessChangeMe = dbConfig.APIAccessChangeMe
+	apiConfig.ApiBaseUrl = dbConfig.APIBaseURL
+	apiConfig.ApiToken = dbConfig.APIToken
 
 	apiConfig.Id = &dbConfig.ID
 	apiConfig.Enable = dbConfig.Enable.Ptr()
@@ -183,13 +185,14 @@ func SetAllConfigsInactive(ctx context.Context) (int64, error) {
 	})
 }
 
-func InsertAsset(ctx context.Context, config apiserver.Configuration, projId string, globalAssetID string, assetId int32, providerId string) error {
+func InsertAsset(ctx context.Context, config apiserver.Configuration, projId string, globalAssetID string, assetId int32, appId string, devEui string) error {
 	var dbAsset appdb.Asset
 	dbAsset.ConfigurationID = null.Int64FromPtr(config.Id).Int64
 	dbAsset.ProjectID = projId
 	dbAsset.GlobalAssetID = globalAssetID
 	dbAsset.AssetID = null.Int32From(assetId)
-	dbAsset.ProviderID = providerId
+	dbAsset.AppID = appId
+	dbAsset.DevEui = devEui
 	return dbAsset.InsertG(ctx, boil.Infer())
 }
 
