@@ -16,11 +16,17 @@
 package eliona
 
 import (
+	"context"
 	"fmt"
+	"github.com/eliona-smart-building-assistant/go-utils/common"
+	"github.com/eliona-smart-building-assistant/go-utils/http"
+	"loriot-io/apiserver"
+	"time"
 
 	api "github.com/eliona-smart-building-assistant/go-eliona-api-client/v2"
 	"github.com/eliona-smart-building-assistant/go-eliona/client"
 	"github.com/eliona-smart-building-assistant/go-utils/log"
+	"github.com/gorilla/websocket"
 )
 
 type Asset interface {
@@ -50,4 +56,53 @@ func notifyUser(userId string, projectId string, assetsCreated int) error {
 		return fmt.Errorf("posting CAC notification: %v", err)
 	}
 	return nil
+}
+
+// UpsertAsset creates a new or gets an existing Eliona asset. Returns the new or existing asset or error if failed.
+func UpsertAsset(ctx context.Context, projectID string, postDeviceRequest apiserver.PostDeviceRequest) (api.Asset, error) {
+
+	// todo: implement asset insert or update to Eliona
+
+	return api.Asset{}, nil
+}
+
+func AssetFromAssetListen(assetListen api.AssetListen) (api.Asset, int32) {
+	var statusCode int32
+	if assetListen.StatusCode != nil {
+		statusCode = *assetListen.StatusCode
+	}
+	return api.Asset{
+		ResourceId:              assetListen.ResourceId,
+		Id:                      assetListen.Id,
+		DeviceIds:               assetListen.DeviceIds,
+		ProjectId:               assetListen.ProjectId,
+		GlobalAssetIdentifier:   assetListen.GlobalAssetIdentifier,
+		Name:                    assetListen.Name,
+		AssetType:               assetListen.AssetType,
+		Latitude:                assetListen.Latitude,
+		Longitude:               assetListen.Longitude,
+		IsTracker:               assetListen.IsTracker,
+		Description:             assetListen.Description,
+		ParentFunctionalAssetId: assetListen.ParentFunctionalAssetId,
+		FunctionalAssetIdPath:   assetListen.FunctionalAssetIdPath,
+		ParentLocationalAssetId: assetListen.ParentLocationalAssetId,
+		LocationalAssetIdPath:   assetListen.LocationalAssetIdPath,
+		Tags:                    assetListen.Tags,
+		ChildrenInfo:            assetListen.ChildrenInfo,
+		Attachments:             assetListen.Attachments,
+	}, statusCode
+}
+
+// ListenForAssetChanges returns a channel for listening of asset changes in Eliona
+func ListenForAssetChanges() (chan api.AssetListen, error) {
+	assets := make(chan api.AssetListen)
+	var err error
+	go func() {
+		err = http.ListenWebSocketWithReconnectAlways(assetListenerWebsocket, time.Duration(0), assets)
+	}()
+	return assets, err
+}
+
+func assetListenerWebsocket() (*websocket.Conn, error) {
+	return http.NewWebSocketConnectionWithApiKey(common.Getenv("API_ENDPOINT", "")+"/asset-listener?expansions=Asset.deviceIds", "X-API-Key", common.Getenv("API_TOKEN", ""))
 }

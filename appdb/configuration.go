@@ -30,7 +30,6 @@ type Configuration struct {
 	APIToken        string            `boil:"api_token" json:"api_token" toml:"api_token" yaml:"api_token"`
 	RefreshInterval int32             `boil:"refresh_interval" json:"refresh_interval" toml:"refresh_interval" yaml:"refresh_interval"`
 	RequestTimeout  int32             `boil:"request_timeout" json:"request_timeout" toml:"request_timeout" yaml:"request_timeout"`
-	AssetFilter     null.JSON         `boil:"asset_filter" json:"asset_filter,omitempty" toml:"asset_filter" yaml:"asset_filter,omitempty"`
 	Active          null.Bool         `boil:"active" json:"active,omitempty" toml:"active" yaml:"active,omitempty"`
 	Enable          null.Bool         `boil:"enable" json:"enable,omitempty" toml:"enable" yaml:"enable,omitempty"`
 	ProjectIds      types.StringArray `boil:"project_ids" json:"project_ids,omitempty" toml:"project_ids" yaml:"project_ids,omitempty"`
@@ -46,7 +45,6 @@ var ConfigurationColumns = struct {
 	APIToken        string
 	RefreshInterval string
 	RequestTimeout  string
-	AssetFilter     string
 	Active          string
 	Enable          string
 	ProjectIds      string
@@ -57,7 +55,6 @@ var ConfigurationColumns = struct {
 	APIToken:        "api_token",
 	RefreshInterval: "refresh_interval",
 	RequestTimeout:  "request_timeout",
-	AssetFilter:     "asset_filter",
 	Active:          "active",
 	Enable:          "enable",
 	ProjectIds:      "project_ids",
@@ -70,7 +67,6 @@ var ConfigurationTableColumns = struct {
 	APIToken        string
 	RefreshInterval string
 	RequestTimeout  string
-	AssetFilter     string
 	Active          string
 	Enable          string
 	ProjectIds      string
@@ -81,7 +77,6 @@ var ConfigurationTableColumns = struct {
 	APIToken:        "configuration.api_token",
 	RefreshInterval: "configuration.refresh_interval",
 	RequestTimeout:  "configuration.request_timeout",
-	AssetFilter:     "configuration.asset_filter",
 	Active:          "configuration.active",
 	Enable:          "configuration.enable",
 	ProjectIds:      "configuration.project_ids",
@@ -112,30 +107,6 @@ func (w whereHelperint32) NIN(slice []int32) qm.QueryMod {
 	}
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
-
-type whereHelpernull_JSON struct{ field string }
-
-func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 type whereHelpernull_Bool struct{ field string }
 
@@ -243,7 +214,6 @@ var ConfigurationWhere = struct {
 	APIToken        whereHelperstring
 	RefreshInterval whereHelperint32
 	RequestTimeout  whereHelperint32
-	AssetFilter     whereHelpernull_JSON
 	Active          whereHelpernull_Bool
 	Enable          whereHelpernull_Bool
 	ProjectIds      whereHelpertypes_StringArray
@@ -254,7 +224,6 @@ var ConfigurationWhere = struct {
 	APIToken:        whereHelperstring{field: "\"loriot_io\".\"configuration\".\"api_token\""},
 	RefreshInterval: whereHelperint32{field: "\"loriot_io\".\"configuration\".\"refresh_interval\""},
 	RequestTimeout:  whereHelperint32{field: "\"loriot_io\".\"configuration\".\"request_timeout\""},
-	AssetFilter:     whereHelpernull_JSON{field: "\"loriot_io\".\"configuration\".\"asset_filter\""},
 	Active:          whereHelpernull_Bool{field: "\"loriot_io\".\"configuration\".\"active\""},
 	Enable:          whereHelpernull_Bool{field: "\"loriot_io\".\"configuration\".\"enable\""},
 	ProjectIds:      whereHelpertypes_StringArray{field: "\"loriot_io\".\"configuration\".\"project_ids\""},
@@ -289,9 +258,9 @@ func (r *configurationR) GetAssets() AssetSlice {
 type configurationL struct{}
 
 var (
-	configurationAllColumns            = []string{"id", "api_base_url", "api_token", "refresh_interval", "request_timeout", "asset_filter", "active", "enable", "project_ids", "user_id"}
+	configurationAllColumns            = []string{"id", "api_base_url", "api_token", "refresh_interval", "request_timeout", "active", "enable", "project_ids", "user_id"}
 	configurationColumnsWithoutDefault = []string{"api_base_url", "api_token"}
-	configurationColumnsWithDefault    = []string{"id", "refresh_interval", "request_timeout", "asset_filter", "active", "enable", "project_ids", "user_id"}
+	configurationColumnsWithDefault    = []string{"id", "refresh_interval", "request_timeout", "active", "enable", "project_ids", "user_id"}
 	configurationPrimaryKeyColumns     = []string{"id"}
 	configurationGeneratedColumns      = []string{}
 )

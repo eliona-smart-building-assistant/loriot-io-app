@@ -19,9 +19,9 @@ import (
 	"context"
 	"loriot-io/apiserver"
 	"loriot-io/apiservices"
-	"loriot-io/appdb"
 	"loriot-io/conf"
 	"loriot-io/eliona"
+	"loriot-io/loriot"
 	"net/http"
 	"sync"
 	"time"
@@ -50,13 +50,13 @@ func collectData() {
 	for _, config := range configs {
 		if !conf.IsConfigEnabled(config) {
 			if conf.IsConfigActive(config) {
-				conf.SetConfigActiveState(context.Background(), config, false)
+				_, _ = conf.SetConfigActiveState(context.Background(), config, false)
 			}
 			continue
 		}
 
 		if !conf.IsConfigActive(config) {
-			conf.SetConfigActiveState(context.Background(), config, true)
+			_, _ = conf.SetConfigActiveState(context.Background(), config, true)
 			log.Info("conf", "Collecting initialized with Configuration %d:\n"+
 				"Enable: %t\n"+
 				"Refresh Interval: %d\n"+
@@ -86,53 +86,71 @@ func collectResources(config *apiserver.Configuration) error {
 	return nil
 }
 
-// listenForOutputChanges listens to output attribute changes from Eliona. Delete if not needed.
-func listenForOutputChanges() {
-	for { // We want to restart listening in case something breaks.
-		outputs, err := eliona.ListenForOutputChanges()
-		if err != nil {
-			log.Error("eliona", "listening for output changes: %v", err)
-			return
-		}
-		for output := range outputs {
-			if cr := output.ClientReference.Get(); cr != nil && *cr == eliona.ClientReference {
-				// Just an echoed value this app sent.
-				continue
-			}
-			asset, err := conf.GetAssetById(output.AssetId)
-			if err != nil {
-				log.Error("conf", "getting asset by assetID %v: %v", output.AssetId, err)
-				return
-			}
-			config, err := conf.GetConfigForAsset(asset)
-			if err != nil {
-				log.Error("conf", "getting configuration for asset id %v: %v", asset.AssetID.Int32, err)
-				return
-			}
-			if err := outputData(asset, config, output.Data); err != nil {
-				log.Error("conf", "outputting data (%v) for config %v and assetId %v: %v", output.Data, config.Id, asset.AssetID.Int32, err)
-				return
-			}
-		}
-		time.Sleep(time.Second * 5) // Give the server a little break.
-	}
-}
-
-// outputData implements passing output data to broker. Remove if not needed.
-func outputData(asset appdb.Asset, config apiserver.Configuration, data map[string]interface{}) error {
-	// Do the output magic here.
-	return nil
-}
-
 // listenApi starts the API server and listen for requests
 func listenApi() {
 	err := http.ListenAndServe(":"+common.Getenv("API_SERVER_PORT", "3000"),
 		frontend.NewEnvironmentHandler(
 			utilshttp.NewCORSEnabledHandler(
 				apiserver.NewRouter(
+					apiserver.NewDevicesAPIController(apiservices.NewDevicesAPIService()),
 					apiserver.NewConfigurationAPIController(apiservices.NewConfigurationApiService()),
 					apiserver.NewVersionAPIController(apiservices.NewVersionApiService()),
 					apiserver.NewCustomizationAPIController(apiservices.NewCustomizationApiService()),
 				))))
 	log.Fatal("main", "API server: %v", err)
+}
+
+func listenForAssetChanges() {
+	ctx := context.Background()
+	for {
+		assetListens, err := eliona.ListenForAssetChanges()
+		if err != nil {
+			log.Error("eliona", "listening for asset changes: %v", err)
+			continue
+		}
+		log.Debug("eliona", "Started websocket listener")
+		for assetListen := range assetListens {
+			asset, statusCode := eliona.AssetFromAssetListen(assetListen)
+			devEUI := loriot.GetDeviceEUI(asset)
+			if devEUI != nil {
+				log.Info("eliona", "Asset %v changed: %d", asset.Id, statusCode)
+
+				// todo: filter assets
+
+				configs, err := conf.GetConfigs(ctx)
+				if err != nil {
+					log.Error("eliona", "Error getting configs: %v", err)
+					continue
+				}
+				for _, config := range configs {
+					var device *loriot.Device
+					var err error
+					if statusCode == 201 {
+						// Creation is only possible if the asset is unarchived and the device already exists
+						device, err = loriot.UpdateDevice(ctx, config, *devEUI, asset)
+					} else if statusCode == 200 {
+						device, err = loriot.UpdateDevice(ctx, config, *devEUI, asset)
+					} else if statusCode == 204 {
+						device, err = loriot.DeleteDevice(ctx, config, *devEUI)
+					}
+					if err != nil {
+						log.Error("loriot", "Error perform operation %d for device %s: %v", statusCode, *devEUI, err)
+						continue
+					}
+					if device == nil {
+						log.Warn("loriot", "Device %s for operation %d not found. Changes from Eliona are ignored", *devEUI, statusCode)
+						continue
+					}
+					log.Info("loriot", "Device %s operation %d successfully performed.", *devEUI, statusCode)
+					_, err = conf.UpsertDeviceAsset(ctx, config, *device, asset, statusCode)
+					if err != nil {
+						log.Error("app", "Error updating app's device database for operation %d for device %s: %v", statusCode, *devEUI, err)
+					}
+				}
+			}
+
+		}
+		log.Warn("Eliona", "Websocket connection broke. Restarting in 5 seconds.")
+		time.Sleep(time.Second * 5) // Give the server a little break.
+	}
 }

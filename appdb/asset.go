@@ -24,52 +24,62 @@ import (
 
 // Asset is an object representing the database table.
 type Asset struct {
-	ID              int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ConfigurationID int64      `boil:"configuration_id" json:"configuration_id" toml:"configuration_id" yaml:"configuration_id"`
-	ProjectID       string     `boil:"project_id" json:"project_id" toml:"project_id" yaml:"project_id"`
-	GlobalAssetID   string     `boil:"global_asset_id" json:"global_asset_id" toml:"global_asset_id" yaml:"global_asset_id"`
-	DevEui          string     `boil:"dev_eui" json:"dev_eui" toml:"dev_eui" yaml:"dev_eui"`
-	AppID           string     `boil:"app_id" json:"app_id" toml:"app_id" yaml:"app_id"`
-	AssetID         null.Int32 `boil:"asset_id" json:"asset_id,omitempty" toml:"asset_id" yaml:"asset_id,omitempty"`
+	ID               int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ConfigurationID  int64      `boil:"configuration_id" json:"configuration_id" toml:"configuration_id" yaml:"configuration_id"`
+	ProjectID        string     `boil:"project_id" json:"project_id" toml:"project_id" yaml:"project_id"`
+	GlobalAssetID    string     `boil:"global_asset_id" json:"global_asset_id" toml:"global_asset_id" yaml:"global_asset_id"`
+	DevEui           string     `boil:"dev_eui" json:"dev_eui" toml:"dev_eui" yaml:"dev_eui"`
+	AppID            string     `boil:"app_id" json:"app_id" toml:"app_id" yaml:"app_id"`
+	AssetID          null.Int32 `boil:"asset_id" json:"asset_id,omitempty" toml:"asset_id" yaml:"asset_id,omitempty"`
+	CreatedAt        null.Time  `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	LatestStatusCode null.Int32 `boil:"latest_status_code" json:"latest_status_code,omitempty" toml:"latest_status_code" yaml:"latest_status_code,omitempty"`
 
 	R *assetR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L assetL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var AssetColumns = struct {
-	ID              string
-	ConfigurationID string
-	ProjectID       string
-	GlobalAssetID   string
-	DevEui          string
-	AppID           string
-	AssetID         string
+	ID               string
+	ConfigurationID  string
+	ProjectID        string
+	GlobalAssetID    string
+	DevEui           string
+	AppID            string
+	AssetID          string
+	CreatedAt        string
+	LatestStatusCode string
 }{
-	ID:              "id",
-	ConfigurationID: "configuration_id",
-	ProjectID:       "project_id",
-	GlobalAssetID:   "global_asset_id",
-	DevEui:          "dev_eui",
-	AppID:           "app_id",
-	AssetID:         "asset_id",
+	ID:               "id",
+	ConfigurationID:  "configuration_id",
+	ProjectID:        "project_id",
+	GlobalAssetID:    "global_asset_id",
+	DevEui:           "dev_eui",
+	AppID:            "app_id",
+	AssetID:          "asset_id",
+	CreatedAt:        "created_at",
+	LatestStatusCode: "latest_status_code",
 }
 
 var AssetTableColumns = struct {
-	ID              string
-	ConfigurationID string
-	ProjectID       string
-	GlobalAssetID   string
-	DevEui          string
-	AppID           string
-	AssetID         string
+	ID               string
+	ConfigurationID  string
+	ProjectID        string
+	GlobalAssetID    string
+	DevEui           string
+	AppID            string
+	AssetID          string
+	CreatedAt        string
+	LatestStatusCode string
 }{
-	ID:              "asset.id",
-	ConfigurationID: "asset.configuration_id",
-	ProjectID:       "asset.project_id",
-	GlobalAssetID:   "asset.global_asset_id",
-	DevEui:          "asset.dev_eui",
-	AppID:           "asset.app_id",
-	AssetID:         "asset.asset_id",
+	ID:               "asset.id",
+	ConfigurationID:  "asset.configuration_id",
+	ProjectID:        "asset.project_id",
+	GlobalAssetID:    "asset.global_asset_id",
+	DevEui:           "asset.dev_eui",
+	AppID:            "asset.app_id",
+	AssetID:          "asset.asset_id",
+	CreatedAt:        "asset.created_at",
+	LatestStatusCode: "asset.latest_status_code",
 }
 
 // Generated where
@@ -162,22 +172,50 @@ func (w whereHelpernull_Int32) NIN(slice []int32) qm.QueryMod {
 func (w whereHelpernull_Int32) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
 func (w whereHelpernull_Int32) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
+type whereHelpernull_Time struct{ field string }
+
+func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 var AssetWhere = struct {
-	ID              whereHelperint64
-	ConfigurationID whereHelperint64
-	ProjectID       whereHelperstring
-	GlobalAssetID   whereHelperstring
-	DevEui          whereHelperstring
-	AppID           whereHelperstring
-	AssetID         whereHelpernull_Int32
+	ID               whereHelperint64
+	ConfigurationID  whereHelperint64
+	ProjectID        whereHelperstring
+	GlobalAssetID    whereHelperstring
+	DevEui           whereHelperstring
+	AppID            whereHelperstring
+	AssetID          whereHelpernull_Int32
+	CreatedAt        whereHelpernull_Time
+	LatestStatusCode whereHelpernull_Int32
 }{
-	ID:              whereHelperint64{field: "\"loriot_io\".\"asset\".\"id\""},
-	ConfigurationID: whereHelperint64{field: "\"loriot_io\".\"asset\".\"configuration_id\""},
-	ProjectID:       whereHelperstring{field: "\"loriot_io\".\"asset\".\"project_id\""},
-	GlobalAssetID:   whereHelperstring{field: "\"loriot_io\".\"asset\".\"global_asset_id\""},
-	DevEui:          whereHelperstring{field: "\"loriot_io\".\"asset\".\"dev_eui\""},
-	AppID:           whereHelperstring{field: "\"loriot_io\".\"asset\".\"app_id\""},
-	AssetID:         whereHelpernull_Int32{field: "\"loriot_io\".\"asset\".\"asset_id\""},
+	ID:               whereHelperint64{field: "\"loriot_io\".\"asset\".\"id\""},
+	ConfigurationID:  whereHelperint64{field: "\"loriot_io\".\"asset\".\"configuration_id\""},
+	ProjectID:        whereHelperstring{field: "\"loriot_io\".\"asset\".\"project_id\""},
+	GlobalAssetID:    whereHelperstring{field: "\"loriot_io\".\"asset\".\"global_asset_id\""},
+	DevEui:           whereHelperstring{field: "\"loriot_io\".\"asset\".\"dev_eui\""},
+	AppID:            whereHelperstring{field: "\"loriot_io\".\"asset\".\"app_id\""},
+	AssetID:          whereHelpernull_Int32{field: "\"loriot_io\".\"asset\".\"asset_id\""},
+	CreatedAt:        whereHelpernull_Time{field: "\"loriot_io\".\"asset\".\"created_at\""},
+	LatestStatusCode: whereHelpernull_Int32{field: "\"loriot_io\".\"asset\".\"latest_status_code\""},
 }
 
 // AssetRels is where relationship names are stored.
@@ -208,9 +246,9 @@ func (r *assetR) GetConfiguration() *Configuration {
 type assetL struct{}
 
 var (
-	assetAllColumns            = []string{"id", "configuration_id", "project_id", "global_asset_id", "dev_eui", "app_id", "asset_id"}
+	assetAllColumns            = []string{"id", "configuration_id", "project_id", "global_asset_id", "dev_eui", "app_id", "asset_id", "created_at", "latest_status_code"}
 	assetColumnsWithoutDefault = []string{"project_id", "global_asset_id", "dev_eui", "app_id"}
-	assetColumnsWithDefault    = []string{"id", "configuration_id", "asset_id"}
+	assetColumnsWithDefault    = []string{"id", "configuration_id", "asset_id", "created_at", "latest_status_code"}
 	assetPrimaryKeyColumns     = []string{"id"}
 	assetGeneratedColumns      = []string{}
 )
@@ -785,6 +823,13 @@ func (o *Asset) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 	}
 
 	var err error
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if queries.MustTime(o.CreatedAt).IsZero() {
+			queries.SetScanner(&o.CreatedAt, currTime)
+		}
+	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
 		return err
@@ -1010,6 +1055,13 @@ func (o *Asset) UpsertG(ctx context.Context, updateOnConflict bool, conflictColu
 func (o *Asset) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns, opts ...UpsertOptionFunc) error {
 	if o == nil {
 		return errors.New("appdb: no asset provided for upsert")
+	}
+	if !boil.TimestampsAreSkipped(ctx) {
+		currTime := time.Now().In(boil.GetLocation())
+
+		if queries.MustTime(o.CreatedAt).IsZero() {
+			queries.SetScanner(&o.CreatedAt, currTime)
+		}
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {

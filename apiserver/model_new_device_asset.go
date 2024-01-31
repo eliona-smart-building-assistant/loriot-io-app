@@ -9,7 +9,7 @@
 
 package apiserver
 
-type NewDevice struct {
+type NewDeviceAsset struct {
 
 	// Global ID in IEEE EUI64 address space that uniquely identifies the device
 	DevEUI string `json:"devEUI"`
@@ -30,8 +30,8 @@ type NewDevice struct {
 	Description *string `json:"description,omitempty"`
 }
 
-// AssertNewDeviceRequired checks if the required fields are not zero-ed
-func AssertNewDeviceRequired(obj NewDevice) error {
+// AssertNewDeviceAssetRequired checks if the required fields are not zero-ed
+func AssertNewDeviceAssetRequired(obj NewDeviceAsset) error {
 	elements := map[string]interface{}{
 		"devEUI":        obj.DevEUI,
 		"appID":         obj.AppID,
@@ -46,7 +46,7 @@ func AssertNewDeviceRequired(obj NewDevice) error {
 	return nil
 }
 
-// AssertNewDeviceConstraints checks if the values respects the defined constraints
-func AssertNewDeviceConstraints(obj NewDevice) error {
+// AssertNewDeviceAssetConstraints checks if the values respects the defined constraints
+func AssertNewDeviceAssetConstraints(obj NewDeviceAsset) error {
 	return nil
 }

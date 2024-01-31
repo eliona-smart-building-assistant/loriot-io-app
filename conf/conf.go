@@ -17,11 +17,13 @@ package conf
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	api "github.com/eliona-smart-building-assistant/go-eliona-api-client/v2"
 	"loriot-io/apiserver"
 	"loriot-io/appdb"
+	"loriot-io/loriot"
+	"time"
 
 	"github.com/eliona-smart-building-assistant/go-eliona/frontend"
 	"github.com/eliona-smart-building-assistant/go-utils/common"
@@ -101,11 +103,6 @@ func dbConfigFromApiConfig(ctx context.Context, apiConfig apiserver.Configuratio
 	if apiConfig.RequestTimeout != nil {
 		dbConfig.RequestTimeout = *apiConfig.RequestTimeout
 	}
-	af, err := json.Marshal(apiConfig.AssetFilter)
-	if err != nil {
-		return appdb.Configuration{}, fmt.Errorf("marshalling assetFilter: %v", err)
-	}
-	dbConfig.AssetFilter = null.JSONFrom(af)
 	dbConfig.Active = null.BoolFromPtr(apiConfig.Active)
 	if apiConfig.ProjectIDs != nil {
 		dbConfig.ProjectIds = *apiConfig.ProjectIDs
@@ -127,13 +124,6 @@ func apiConfigFromDbConfig(dbConfig *appdb.Configuration) (apiConfig apiserver.C
 	apiConfig.Enable = dbConfig.Enable.Ptr()
 	apiConfig.RefreshInterval = dbConfig.RefreshInterval
 	apiConfig.RequestTimeout = &dbConfig.RequestTimeout
-	if dbConfig.AssetFilter.Valid {
-		var af [][]apiserver.FilterRule
-		if err := json.Unmarshal(dbConfig.AssetFilter.JSON, &af); err != nil {
-			return apiserver.Configuration{}, fmt.Errorf("unmarshalling assetFilter: %v", err)
-		}
-		apiConfig.AssetFilter = af
-	}
 	apiConfig.Active = dbConfig.Active.Ptr()
 	apiConfig.ProjectIDs = common.Ptr[[]string](dbConfig.ProjectIds)
 	apiConfig.UserId = dbConfig.UserID.Ptr()
@@ -177,6 +167,10 @@ func IsConfigActive(config apiserver.Configuration) bool {
 
 func IsConfigEnabled(config apiserver.Configuration) bool {
 	return config.Enable == nil || *config.Enable
+}
+
+func GetDeviceAssets(ctx context.Context) ([]apiserver.DeviceAsset, error) {
+	return []apiserver.DeviceAsset{}, nil
 }
 
 func SetAllConfigsInactive(ctx context.Context) (int64, error) {
@@ -224,4 +218,20 @@ func GetConfigForAsset(asset appdb.Asset) (apiserver.Configuration, error) {
 		return apiserver.Configuration{}, fmt.Errorf("fetching configuration: %v", err)
 	}
 	return apiConfigFromDbConfig(c)
+}
+
+func UpsertDeviceAsset(ctx context.Context, config apiserver.Configuration, device loriot.Device, asset api.Asset, statusCode int32) (apiserver.DeviceAsset, error) {
+	// todo: upsert the device asset
+
+	deviceAsset := apiserver.DeviceAsset{}
+	deviceAsset.AssetID = asset.Id.Get()
+	deviceAsset.GlobalAssetIdentifier = asset.GlobalAssetIdentifier
+	deviceAsset.AppID = device.AppID
+	deviceAsset.ProjectID = common.Ptr(asset.ProjectId)
+	deviceAsset.DevEUI = device.DevEUI
+	deviceAsset.ConfigID = config.Id
+	deviceAsset.LatestStatusCode = common.Ptr(statusCode)
+	deviceAsset.ChangedAt = common.Ptr(time.Now())
+
+	return deviceAsset, nil
 }

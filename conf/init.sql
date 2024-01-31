@@ -15,7 +15,6 @@
 
 create schema if not exists loriot_io;
 
--- Should be editable by eliona frontend.
 create table if not exists loriot_io.configuration
 (
 	id                   bigserial primary key,
@@ -23,7 +22,6 @@ create table if not exists loriot_io.configuration
     api_token            text not null,
 	refresh_interval     integer not null default 60,
 	request_timeout      integer not null default 120,
-	asset_filter         json,
 	active               boolean default false,
 	enable               boolean default false,
 	project_ids          text[],
@@ -38,7 +36,9 @@ create table if not exists loriot_io.asset
 	global_asset_id  text      not null,
     dev_eui          text      not null,
     app_id           text      not null,
-    asset_id         integer
+    asset_id         integer,
+    created_at       timestamp,
+    latest_status_code  int
 );
 
 -- Makes the new objects available for all other init steps
