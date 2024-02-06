@@ -9,7 +9,7 @@
 
 package apiserver
 
-type PostDeviceRequest struct {
+type PutDeviceRequest struct {
 
 	// Global ID in IEEE EUI64 address space that uniquely identifies the device
 	DevEUI string `json:"devEUI"`
@@ -21,13 +21,13 @@ type PostDeviceRequest struct {
 	AssetTypeName string `json:"assetTypeName"`
 
 	// Configuration id to define the target Loriot.io. If empty all configs are used.
-	ConfigID *string `json:"configID,omitempty"`
+	ConfigID string `json:"configID,omitempty"`
 
 	// Title for the new device and asset
-	Title *string `json:"title,omitempty"`
+	Title string `json:"title,omitempty"`
 
 	// Description for the new device and asset
-	Description *string `json:"description,omitempty"`
+	Description string `json:"description,omitempty"`
 
 	AppEUI string `json:"appEUI,omitempty"`
 
@@ -51,9 +51,9 @@ type PostDeviceRequest struct {
 
 	NetID string `json:"netID,omitempty"`
 
-	NfcNtDwn string `json:"nfcNtDwn,omitempty"`
+	NfCntDwn string `json:"nfCntDwn,omitempty"`
 
-	AfcNtDwn string `json:"afcNtDwn,omitempty"`
+	AfCntDwn string `json:"afCntDwn,omitempty"`
 
 	FNwkSIntKey string `json:"fNwkSIntKey,omitempty"`
 
@@ -62,8 +62,8 @@ type PostDeviceRequest struct {
 	NwkSEncKey string `json:"nwkSEncKey,omitempty"`
 }
 
-// AssertPostDeviceRequestRequired checks if the required fields are not zero-ed
-func AssertPostDeviceRequestRequired(obj PostDeviceRequest) error {
+// AssertPutDeviceRequestRequired checks if the required fields are not zero-ed
+func AssertPutDeviceRequestRequired(obj PutDeviceRequest) error {
 	elements := map[string]interface{}{
 		"devEUI":        obj.DevEUI,
 		"appID":         obj.AppID,
@@ -78,7 +78,7 @@ func AssertPostDeviceRequestRequired(obj PostDeviceRequest) error {
 	return nil
 }
 
-// AssertPostDeviceRequestConstraints checks if the values respects the defined constraints
-func AssertPostDeviceRequestConstraints(obj PostDeviceRequest) error {
+// AssertPutDeviceRequestConstraints checks if the values respects the defined constraints
+func AssertPutDeviceRequestConstraints(obj PutDeviceRequest) error {
 	return nil
 }

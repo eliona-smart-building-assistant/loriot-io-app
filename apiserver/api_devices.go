@@ -55,10 +55,10 @@ func (c *DevicesAPIController) Routes() Routes {
 			"/v1/devices",
 			c.GetDevices,
 		},
-		"PostDevice": Route{
-			strings.ToUpper("Post"),
+		"PutDevice": Route{
+			strings.ToUpper("Put"),
 			"/v1/devices",
-			c.PostDevice,
+			c.PutDevice,
 		},
 	}
 }
@@ -75,32 +75,24 @@ func (c *DevicesAPIController) GetDevices(w http.ResponseWriter, r *http.Request
 	EncodeJSONResponse(result.Body, &result.Code, w)
 }
 
-// PostDevice - Creates a new LoRaWAN device
-func (c *DevicesAPIController) PostDevice(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	var type_Param string
-	if query.Has("type") {
-		param := query.Get("type")
-
-		type_Param = param
-	} else {
-	}
-	postDeviceRequestParam := PostDeviceRequest{}
+// PutDevice - Create or update a LoRaWAN device
+func (c *DevicesAPIController) PutDevice(w http.ResponseWriter, r *http.Request) {
+	putDeviceRequestParam := PutDeviceRequest{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
-	if err := d.Decode(&postDeviceRequestParam); err != nil && !errors.Is(err, io.EOF) {
+	if err := d.Decode(&putDeviceRequestParam); err != nil && !errors.Is(err, io.EOF) {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	if err := AssertPostDeviceRequestRequired(postDeviceRequestParam); err != nil {
+	if err := AssertPutDeviceRequestRequired(putDeviceRequestParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	if err := AssertPostDeviceRequestConstraints(postDeviceRequestParam); err != nil {
+	if err := AssertPutDeviceRequestConstraints(putDeviceRequestParam); err != nil {
 		c.errorHandler(w, r, err, nil)
 		return
 	}
-	result, err := c.service.PostDevice(r.Context(), type_Param, postDeviceRequestParam)
+	result, err := c.service.PutDevice(r.Context(), putDeviceRequestParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

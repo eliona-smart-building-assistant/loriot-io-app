@@ -20,15 +20,14 @@ import (
 	"errors"
 	"fmt"
 	api "github.com/eliona-smart-building-assistant/go-eliona-api-client/v2"
-	"loriot-io/apiserver"
-	"loriot-io/appdb"
-	"loriot-io/loriot"
-	"time"
-
+	"github.com/eliona-smart-building-assistant/go-eliona/client"
 	"github.com/eliona-smart-building-assistant/go-eliona/frontend"
 	"github.com/eliona-smart-building-assistant/go-utils/common"
+	"github.com/eliona-smart-building-assistant/go-utils/log"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"loriot-io/apiserver"
+	"loriot-io/appdb"
 )
 
 var ErrBadRequest = errors.New("bad request")
@@ -103,7 +102,6 @@ func dbConfigFromApiConfig(ctx context.Context, apiConfig apiserver.Configuratio
 	if apiConfig.RequestTimeout != nil {
 		dbConfig.RequestTimeout = *apiConfig.RequestTimeout
 	}
-	dbConfig.Active = null.BoolFromPtr(apiConfig.Active)
 	if apiConfig.ProjectIDs != nil {
 		dbConfig.ProjectIds = *apiConfig.ProjectIDs
 	}
@@ -124,7 +122,6 @@ func apiConfigFromDbConfig(dbConfig *appdb.Configuration) (apiConfig apiserver.C
 	apiConfig.Enable = dbConfig.Enable.Ptr()
 	apiConfig.RefreshInterval = dbConfig.RefreshInterval
 	apiConfig.RequestTimeout = &dbConfig.RequestTimeout
-	apiConfig.Active = dbConfig.Active.Ptr()
 	apiConfig.ProjectIDs = common.Ptr[[]string](dbConfig.ProjectIds)
 	apiConfig.UserId = dbConfig.UserID.Ptr()
 	return apiConfig, nil
@@ -146,14 +143,6 @@ func GetConfigs(ctx context.Context) ([]apiserver.Configuration, error) {
 	return apiConfigs, nil
 }
 
-func SetConfigActiveState(ctx context.Context, config apiserver.Configuration, state bool) (int64, error) {
-	return appdb.Configurations(
-		appdb.ConfigurationWhere.ID.EQ(null.Int64FromPtr(config.Id).Int64),
-	).UpdateAllG(ctx, appdb.M{
-		appdb.ConfigurationColumns.Active: state,
-	})
-}
-
 func ProjIds(config apiserver.Configuration) []string {
 	if config.ProjectIDs == nil {
 		return []string{}
@@ -161,77 +150,25 @@ func ProjIds(config apiserver.Configuration) []string {
 	return *config.ProjectIDs
 }
 
-func IsConfigActive(config apiserver.Configuration) bool {
-	return config.Active == nil || *config.Active
-}
-
 func IsConfigEnabled(config apiserver.Configuration) bool {
 	return config.Enable == nil || *config.Enable
 }
 
-func GetDeviceAssets(ctx context.Context) ([]apiserver.DeviceAsset, error) {
-	return []apiserver.DeviceAsset{}, nil
-}
-
-func SetAllConfigsInactive(ctx context.Context) (int64, error) {
-	return appdb.Configurations().UpdateAllG(ctx, appdb.M{
-		appdb.ConfigurationColumns.Active: false,
-	})
-}
-
-func InsertAsset(ctx context.Context, config apiserver.Configuration, projId string, globalAssetID string, assetId int32, appId string, devEui string) error {
-	var dbAsset appdb.Asset
-	dbAsset.ConfigurationID = null.Int64FromPtr(config.Id).Int64
-	dbAsset.ProjectID = projId
-	dbAsset.GlobalAssetID = globalAssetID
-	dbAsset.AssetID = null.Int32From(assetId)
-	dbAsset.AppID = appId
-	dbAsset.DevEui = devEui
-	return dbAsset.InsertG(ctx, boil.Infer())
-}
-
-func GetAssetId(ctx context.Context, config apiserver.Configuration, projId string, globalAssetID string) (*int32, error) {
-	dbAsset, err := appdb.Assets(
-		appdb.AssetWhere.ConfigurationID.EQ(null.Int64FromPtr(config.Id).Int64),
-		appdb.AssetWhere.ProjectID.EQ(projId),
-		appdb.AssetWhere.GlobalAssetID.EQ(globalAssetID),
-	).AllG(ctx)
-	if err != nil || len(dbAsset) == 0 {
-		return nil, err
+func NotifyUser(userId *string, projectId *string, translation *api.Translation) {
+	if userId == nil {
+		return
 	}
-	return common.Ptr(dbAsset[0].AssetID.Int32), nil
-}
-
-func GetAssetById(assetId int32) (appdb.Asset, error) {
-	asset, err := appdb.Assets(
-		appdb.AssetWhere.AssetID.EQ(null.Int32From(assetId)),
-	).OneG(context.Background())
+	receipt, _, err := client.NewClient().CommunicationAPI.
+		PostNotification(client.AuthenticationContext()).
+		Notification(
+			api.Notification{
+				User:      *userId,
+				ProjectId: *api.NewNullableString(projectId),
+				Message:   *api.NewNullableTranslation(translation),
+			}).
+		Execute()
+	log.Debug("eliona", "posted notification about CAC: %v", receipt)
 	if err != nil {
-		return appdb.Asset{}, fmt.Errorf("fetching asset: %v", err)
+		log.Error("notify", "Error notifying user: %v", err)
 	}
-	return *asset, nil
-}
-
-func GetConfigForAsset(asset appdb.Asset) (apiserver.Configuration, error) {
-	c, err := asset.Configuration().OneG(context.Background())
-	if err != nil {
-		return apiserver.Configuration{}, fmt.Errorf("fetching configuration: %v", err)
-	}
-	return apiConfigFromDbConfig(c)
-}
-
-func UpsertDeviceAsset(ctx context.Context, config apiserver.Configuration, device loriot.Device, asset api.Asset, statusCode int32) (apiserver.DeviceAsset, error) {
-	// todo: upsert the device asset
-
-	deviceAsset := apiserver.DeviceAsset{}
-	deviceAsset.AssetID = asset.Id.Get()
-	deviceAsset.GlobalAssetIdentifier = asset.GlobalAssetIdentifier
-	deviceAsset.AppID = device.AppID
-	deviceAsset.ProjectID = common.Ptr(asset.ProjectId)
-	deviceAsset.DevEUI = device.DevEUI
-	deviceAsset.ConfigID = config.Id
-	deviceAsset.LatestStatusCode = common.Ptr(statusCode)
-	deviceAsset.ChangedAt = common.Ptr(time.Now())
-
-	return deviceAsset, nil
 }

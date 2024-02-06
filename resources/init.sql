@@ -22,7 +22,6 @@ create table if not exists loriot_io.configuration
     api_token            text not null,
 	refresh_interval     integer not null default 60,
 	request_timeout      integer not null default 120,
-	active               boolean default false,
 	enable               boolean default false,
 	project_ids          text[],
 	user_id              text
@@ -30,14 +29,13 @@ create table if not exists loriot_io.configuration
 
 create table if not exists loriot_io.asset
 (
-	id               bigserial primary key,
+    asset_id         integer   primary key,
 	configuration_id bigserial not null references loriot_io.configuration(id) ON DELETE CASCADE,
 	project_id       text      not null,
 	global_asset_id  text      not null,
     dev_eui          text      not null,
     app_id           text      not null,
-    asset_id         integer,
-    created_at       timestamp,
+    modified_at       timestamp,
     latest_status_code  int
 );
 

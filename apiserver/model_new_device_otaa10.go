@@ -21,13 +21,13 @@ type NewDeviceOtaa10 struct {
 	AssetTypeName string `json:"assetTypeName"`
 
 	// Configuration id to define the target Loriot.io. If empty all configs are used.
-	ConfigID *string `json:"configID,omitempty"`
+	ConfigID string `json:"configID,omitempty"`
 
 	// Title for the new device and asset
-	Title *string `json:"title,omitempty"`
+	Title string `json:"title,omitempty"`
 
 	// Description for the new device and asset
-	Description *string `json:"description,omitempty"`
+	Description string `json:"description,omitempty"`
 
 	AppEUI string `json:"appEUI,omitempty"`
 

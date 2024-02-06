@@ -21,10 +21,10 @@ import (
 	api "github.com/eliona-smart-building-assistant/go-eliona-api-client/v2"
 	"github.com/eliona-smart-building-assistant/go-utils/http"
 	"loriot-io/apiserver"
+	http2 "net/http"
 	"regexp"
 	"time"
 
-	"github.com/eliona-smart-building-assistant/go-eliona/utils"
 	"github.com/eliona-smart-building-assistant/go-utils/common"
 )
 
@@ -101,6 +101,33 @@ type Device struct {
 	LastDevStatusSeen time.Time `json:"lastDevStatusSeen"`
 }
 
+type DeviceForUpdate struct {
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+type DeviceForCreate struct {
+	DevEUI      string `json:"deveui,omitempty"`
+	AppEUI      string `json:"appeui,omitempty"`
+	JoinEUI     string `json:"joineui,omitempty"`
+	AppKey      string `json:"appkey,omitempty"`
+	NwkKey      string `json:"nwkkey,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	DevClass    string `json:"devclass,omitempty"`
+	DevAddr     string `json:"devaddr,omitempty"`
+	SeqNo       string `json:"seqno,omitempty"`
+	SeqDN       string `json:"seqdn,omitempty"`
+	NwkSKey     string `json:"nwkskey,omitempty"`
+	NetID       string `json:"netid,omitempty"`
+	AppSKey     string `json:"AppSKey,omitempty"`
+	NFCntDwn    string `json:"NFCntDwn,omitempty"`
+	AFCntDwn    string `json:"AFCntDwn,omitempty"`
+	FNwkSIntKey string `json:"FNwkSIntKey,omitempty"`
+	SNwkSIntKey string `json:"SNwkSIntKey,omitempty"`
+	NwkSEncKey  string `json:"NwkSEncKey,omitempty"`
+}
+
 func getFromApi[T any](_ context.Context, config apiserver.Configuration, getData func(Meta) []T, urlFormat string, args ...interface{}) ([]T, error) {
 	var results []T
 	var page = 1
@@ -113,9 +140,9 @@ func getFromApi[T any](_ context.Context, config apiserver.Configuration, getDat
 		if err != nil {
 			return nil, fmt.Errorf("error creating request for %s: %w", fullUrl, err)
 		}
-		meta, err := http.Read[Meta](request, time.Duration(*config.RequestTimeout)*time.Second, true)
-		if err != nil {
-			return nil, fmt.Errorf("error reading request for %s: %w", fullUrl, err)
+		meta, statusCode, err := http.ReadWithStatusCode[Meta](request, time.Duration(*config.RequestTimeout)*time.Second, true)
+		if err != nil || statusCode != http2.StatusOK {
+			return nil, fmt.Errorf("error reading request for %s: %d %w", fullUrl, statusCode, err)
 		}
 		results = append(results, getData(meta)...)
 		if page*perPage >= meta.Total {
@@ -136,18 +163,25 @@ func getApps(ctx context.Context, config apiserver.Configuration) ([]App, error)
 func getDevices(ctx context.Context, config apiserver.Configuration, appId string) ([]Device, error) {
 	var devices []Device
 	devices, err := getFromApi[Device](ctx, config, func(meta Meta) []Device { return meta.Devices }, "/1/nwk/app/%s/devices", appId)
+	for idx, _ := range devices {
+		devices[idx].AppID = appId
+	}
 	return devices, err
 }
 
 func getDevice(ctx context.Context, config apiserver.Configuration, appId string, devEUI string) (*Device, error) {
 	request, err := http.NewRequestWithBearer(config.ApiBaseUrl+fmt.Sprintf("/1/nwk/app/%s/device/%s", appId, devEUI), config.ApiToken)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request for %s: %w", config.ApiBaseUrl, err)
+		return nil, fmt.Errorf("error creating get request for %s: %w", config.ApiBaseUrl, err)
 	}
-	device, err := http.Read[Device](request, time.Duration(*config.RequestTimeout)*time.Second, true)
-	if err != nil {
-		return nil, fmt.Errorf("error reading request for %s: %w", config.ApiBaseUrl, err)
+	device, statusCode, err := http.ReadWithStatusCode[Device](request, time.Duration(*config.RequestTimeout)*time.Second, true)
+	if statusCode == http2.StatusNotFound {
+		return nil, nil
 	}
+	if err != nil || statusCode != http2.StatusOK {
+		return nil, fmt.Errorf("error reading get request for %s: %d %w", config.ApiBaseUrl, statusCode, err)
+	}
+	device.AppID = appId
 	return &device, nil
 }
 
@@ -169,44 +203,94 @@ func searchDevice(ctx context.Context, config apiserver.Configuration, devEUI st
 }
 
 func postDeviceForUpdate(ctx context.Context, config apiserver.Configuration, device Device) error {
-	// todo: implement post device call
+	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/device/%s", device.AppID, device.DevEUI)
+	deviceForUpdate := DeviceForUpdate{
+		Title:       device.Title,
+		Description: device.Description,
+	}
+	request, err := http.NewPostRequestWithBearer(fullUrl, deviceForUpdate, config.ApiToken)
+	if err != nil {
+		return fmt.Errorf("error creating post request for %s: %w", fullUrl, err)
+	}
+	_, statusCode, err := http.ReadWithStatusCode[any](request, time.Duration(*config.RequestTimeout)*time.Second, true)
+	if err != nil || statusCode != http2.StatusOK {
+		return fmt.Errorf("error reading post request for %s: %d %w", fullUrl, statusCode, err)
+	}
 	return nil
 }
 
-func postDeviceForCreate(ctx context.Context, config apiserver.Configuration, type_ string, request apiserver.PostDeviceRequest) (*Device, error) {
-	// todo: implement post device call
-	return nil, nil
+func postDeviceForCreate(ctx context.Context, config apiserver.Configuration, putDeviceRequest apiserver.PutDeviceRequest) (*Device, error) {
+	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/devices", putDeviceRequest.AppID)
+	deviceForCreate := DeviceForCreate{
+		DevEUI:      putDeviceRequest.DevEUI,
+		AppEUI:      putDeviceRequest.AppEUI,
+		JoinEUI:     putDeviceRequest.JoinEUI,
+		AppKey:      putDeviceRequest.AppKey,
+		NwkKey:      putDeviceRequest.NwkKey,
+		Title:       putDeviceRequest.Title,
+		Description: putDeviceRequest.Description,
+		DevClass:    putDeviceRequest.DevClass,
+		DevAddr:     putDeviceRequest.DevAddr,
+		SeqNo:       putDeviceRequest.SeqNo,
+		SeqDN:       putDeviceRequest.SeqDN,
+		NwkSKey:     putDeviceRequest.NwkSKey,
+		NetID:       putDeviceRequest.NetID,
+		AppSKey:     putDeviceRequest.AppSKey,
+		NFCntDwn:    putDeviceRequest.NfCntDwn,
+		AFCntDwn:    putDeviceRequest.AfCntDwn,
+		FNwkSIntKey: putDeviceRequest.FNwkSIntKey,
+		SNwkSIntKey: putDeviceRequest.SNwkSIntKey,
+		NwkSEncKey:  putDeviceRequest.NwkSEncKey,
+	}
+	request, err := http.NewPostRequestWithBearer(fullUrl, deviceForCreate, config.ApiToken)
+	if err != nil {
+		return nil, fmt.Errorf("error creating post request for %s: %w", fullUrl, err)
+	}
+	device, statusCode, err := http.ReadWithStatusCode[Device](request, time.Duration(*config.RequestTimeout)*time.Second, true)
+	if err != nil || statusCode != http2.StatusOK {
+		return &device, fmt.Errorf("error reading post request for %s: %d %w", fullUrl, statusCode, err)
+	}
+	return &device, nil
 }
 
 func deleteDevice(ctx context.Context, config apiserver.Configuration, device Device) error {
-	// todo: implement delete device call
+	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/device/%s", device.AppID, device.DevEUI)
+	request, err := http.NewDeleteRequestWithBearer(fullUrl, config.ApiToken)
+	if err != nil {
+		return fmt.Errorf("error creating delete request for %s: %w", fullUrl, err)
+	}
+	_, statusCode, err := http.ReadWithStatusCode[any](request, time.Duration(*config.RequestTimeout)*time.Second, true)
+	if err != nil || statusCode != http2.StatusOK {
+		return fmt.Errorf("error reading delete request for %s: %d %w", fullUrl, statusCode, err)
+	}
 	return nil
 }
 
 // UpsertDevice creates or updates a device using the device EUI as primary key.
-func UpsertDevice(ctx context.Context, config apiserver.Configuration, type_ string, request apiserver.PostDeviceRequest) (*Device, error) {
+func UpsertDevice(ctx context.Context, config apiserver.Configuration, request apiserver.PutDeviceRequest) (*Device, error) {
 	device, err := getDevice(ctx, config, request.AppID, request.DevEUI)
 	if err != nil {
 		return nil, fmt.Errorf("error getting device for upserting %s: %w", request.DevEUI, err)
 	}
 	if device == nil {
-		device, err = postDeviceForCreate(ctx, config, type_, request)
+		device, err = postDeviceForCreate(ctx, config, request)
 		if err != nil {
 			return device, fmt.Errorf("error creating device %s: %w", request.DevEUI, err)
 		}
+		return device, nil
 	} else {
-		if request.Title != nil {
-			device.Title = *request.Title
+		if len(request.Title) > 0 {
+			device.Title = request.Title
 		}
-		if request.Description != nil {
-			device.Description = *request.Description
+		if len(request.Description) > 0 {
+			device.Description = request.Description
 		}
 		err := postDeviceForUpdate(ctx, config, *device)
 		if err != nil {
 			return device, fmt.Errorf("error updating device %s: %w", request.DevEUI, err)
 		}
+		return device, nil
 	}
-	return device, nil
 }
 
 func UpdateDevice(ctx context.Context, config apiserver.Configuration, devEUI string, asset api.Asset) (*Device, error) {
@@ -249,10 +333,10 @@ func DeleteDevice(ctx context.Context, config apiserver.Configuration, devEUI st
 	return device, nil
 }
 
-var euiRegex = regexp.MustCompile(`^[A-Fa-f0-9]{32}$`)
+var euiRegex = regexp.MustCompile(`^[A-Fa-f0-9]{16}$|^[A-Fa-f0-9]{32}$|^[A-Fa-f0-9]{64}$`)
 
-// isValidEUI checks if the given string is a valid EUI-64 identifier.
-func isValidEUI(s *string) bool {
+// IsValidEUI checks if the given string is a valid EUI-64 identifier.
+func IsValidEUI(s *string) bool {
 	if s == nil {
 		return false
 	}
@@ -261,7 +345,7 @@ func isValidEUI(s *string) bool {
 
 func GetDeviceEUI(asset api.Asset) *string {
 	for _, deviceId := range asset.DeviceIds {
-		if isValidEUI(&deviceId) {
+		if IsValidEUI(&deviceId) {
 			return common.Ptr(deviceId)
 		}
 	}
@@ -271,35 +355,4 @@ func GetDeviceEUI(asset api.Asset) *string {
 type ExampleDevice struct {
 	ID   string `eliona:"id" subtype:"info"`
 	Name string `eliona:"name,filterable" subtype:"info"`
-}
-
-func GetTags(config apiserver.Configuration) ([]ExampleDevice, error) {
-	return nil, nil
-}
-
-func (tag *ExampleDevice) AdheresToFilter(filter [][]apiserver.FilterRule) (bool, error) {
-	f := apiFilterToCommonFilter(filter)
-	fp, err := utils.StructToMap(tag)
-	if err != nil {
-		return false, fmt.Errorf("converting strict to map: %v", err)
-	}
-	adheres, err := common.Filter(f, fp)
-	if err != nil {
-		return false, err
-	}
-	return adheres, nil
-}
-
-func apiFilterToCommonFilter(input [][]apiserver.FilterRule) [][]common.FilterRule {
-	result := make([][]common.FilterRule, len(input))
-	for i := 0; i < len(input); i++ {
-		result[i] = make([]common.FilterRule, len(input[i]))
-		for j := 0; j < len(input[i]); j++ {
-			result[i][j] = common.FilterRule{
-				Parameter: input[i][j].Parameter,
-				Regex:     input[i][j].Regex,
-			}
-		}
-	}
-	return result
 }

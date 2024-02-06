@@ -9,9 +9,6 @@
     "en": "The Loriot.io app allows access to Loriot.io devices.",
     "de": "Die Loriot.io-App ermöglicht den Zugriff auf Loriot.io-Geräte."
   },
-  "dashboardTemplateNames": [
-    "Loriot.io devices"
-  ],
   "apiUrl": "v1",
   "apiSpecificationPath": "/version/openapi.json",
   "documentationUrl": "https://doc.eliona.io/",

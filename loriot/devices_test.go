@@ -9,8 +9,11 @@ func TestIsValidEUI64(t *testing.T) {
 		id   string
 		want bool
 	}{
-		{"Valid EUI-64", "0123456789ABCDEF", true},
-		{"Invalid length", "01234567", false},
+		{"Valid EUI-16", "0123456789ABCDEF", true},
+		{"Valid EUI-32", "0123456789ABCDEF0123456789ABCDEF", true},
+		{"Valid EUI-64", "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF", true},
+		{"Invalid length 1", "01234567", false},
+		{"Invalid length 2", "0123456789ABCDEF0123456789ABCDEFR", false},
 		{"Invalid characters", "G123456789ABCDE", false},
 		{"Empty string", "", false},
 		{"Nil pointer", "", false}, // Special case to test nil pointer
@@ -22,7 +25,7 @@ func TestIsValidEUI64(t *testing.T) {
 			if tt.name != "Nil pointer" {
 				idPtr = &tt.id
 			}
-			if got := isValidEUI(idPtr); got != tt.want {
+			if got := IsValidEUI(idPtr); got != tt.want {
 				t.Errorf("isValidEUI64() = %v, want %v", got, tt.want)
 			}
 		})

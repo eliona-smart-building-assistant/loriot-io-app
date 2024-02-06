@@ -25,19 +25,12 @@ type ConfigurationAPIRouter interface {
 	PutConfigurationById(http.ResponseWriter, *http.Request)
 }
 
-// CustomizationAPIRouter defines the required methods for binding the api requests to a responses for the CustomizationAPI
-// The CustomizationAPIRouter implementation should parse necessary information from the http request,
-// pass the data to a CustomizationAPIServicer to perform the required actions, then write the service results to the http response.
-type CustomizationAPIRouter interface {
-	GetDashboardTemplateByName(http.ResponseWriter, *http.Request)
-}
-
 // DevicesAPIRouter defines the required methods for binding the api requests to a responses for the DevicesAPI
 // The DevicesAPIRouter implementation should parse necessary information from the http request,
 // pass the data to a DevicesAPIServicer to perform the required actions, then write the service results to the http response.
 type DevicesAPIRouter interface {
 	GetDevices(http.ResponseWriter, *http.Request)
-	PostDevice(http.ResponseWriter, *http.Request)
+	PutDevice(http.ResponseWriter, *http.Request)
 }
 
 // VersionAPIRouter defines the required methods for binding the api requests to a responses for the VersionAPI
@@ -60,21 +53,13 @@ type ConfigurationAPIServicer interface {
 	PutConfigurationById(context.Context, int64, Configuration) (ImplResponse, error)
 }
 
-// CustomizationAPIServicer defines the api actions for the CustomizationAPI service
-// This interface intended to stay up to date with the openapi yaml used to generate it,
-// while the service implementation can be ignored with the .openapi-generator-ignore file
-// and updated with the logic required for the API.
-type CustomizationAPIServicer interface {
-	GetDashboardTemplateByName(context.Context, string, string) (ImplResponse, error)
-}
-
 // DevicesAPIServicer defines the api actions for the DevicesAPI service
 // This interface intended to stay up to date with the openapi yaml used to generate it,
 // while the service implementation can be ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type DevicesAPIServicer interface {
 	GetDevices(context.Context) (ImplResponse, error)
-	PostDevice(context.Context, string, PostDeviceRequest) (ImplResponse, error)
+	PutDevice(context.Context, PutDeviceRequest) (ImplResponse, error)
 }
 
 // VersionAPIServicer defines the api actions for the VersionAPI service

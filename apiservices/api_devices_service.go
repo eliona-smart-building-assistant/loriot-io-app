@@ -12,9 +12,8 @@ package apiservices
 import (
 	"context"
 	"loriot-io/apiserver"
-	"loriot-io/conf"
-	"loriot-io/eliona"
-	"loriot-io/loriot"
+	"loriot-io/app"
+	"loriot-io/broker"
 	"net/http"
 )
 
@@ -38,31 +37,14 @@ func (s *DevicesAPIService) GetDevices(ctx context.Context) (apiserver.ImplRespo
 	return apiserver.Response(http.StatusOK, devices), err
 }
 
-// PostDevice - Creates a new LoRaWAN device
-func (s *DevicesAPIService) PostDevice(ctx context.Context, type_ string, postDeviceRequest apiserver.PostDeviceRequest) (apiserver.ImplResponse, error) {
-	configs, err := conf.GetConfigs(ctx)
-	if err != nil {
-		return apiserver.ImplResponse{}, err
+// PutDevice - Create or update a LoRaWAN device
+func (s *DevicesAPIService) PutDevice(ctx context.Context, putDeviceRequest apiserver.PutDeviceRequest) (apiserver.ImplResponse, error) {
+	deviceAssets, err := broker.UpsertDevice(ctx, putDeviceRequest)
+	if deviceAssets == nil {
+		return apiserver.Response(http.StatusBadRequest, nil), err
 	}
-	var deviceAssets []apiserver.DeviceAsset
-	for _, config := range configs {
-		device, err := loriot.UpsertDevice(ctx, config, type_, postDeviceRequest)
-		if err != nil {
-			return apiserver.ImplResponse{}, err
-		}
-		if device != nil {
-			for _, projectID := range conf.ProjIds(config) {
-				asset, err := eliona.UpsertAsset(ctx, projectID, postDeviceRequest)
-				if err != nil {
-					return apiserver.ImplResponse{}, err
-				}
-				deviceAsset, err := conf.UpsertDeviceAsset(ctx, config, *device, asset, 201)
-				if err != nil {
-					return apiserver.ImplResponse{}, err
-				}
-				deviceAssets = append(deviceAssets, deviceAsset)
-			}
-		}
+	if err != nil {
+		return apiserver.Response(http.StatusInternalServerError, deviceAssets), err
 	}
 	return apiserver.Response(http.StatusOK, deviceAssets), err
 }

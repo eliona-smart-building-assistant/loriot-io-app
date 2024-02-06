@@ -24,14 +24,13 @@ import (
 
 // Asset is an object representing the database table.
 type Asset struct {
-	ID               int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	AssetID          int32      `boil:"asset_id" json:"asset_id" toml:"asset_id" yaml:"asset_id"`
 	ConfigurationID  int64      `boil:"configuration_id" json:"configuration_id" toml:"configuration_id" yaml:"configuration_id"`
 	ProjectID        string     `boil:"project_id" json:"project_id" toml:"project_id" yaml:"project_id"`
 	GlobalAssetID    string     `boil:"global_asset_id" json:"global_asset_id" toml:"global_asset_id" yaml:"global_asset_id"`
 	DevEui           string     `boil:"dev_eui" json:"dev_eui" toml:"dev_eui" yaml:"dev_eui"`
 	AppID            string     `boil:"app_id" json:"app_id" toml:"app_id" yaml:"app_id"`
-	AssetID          null.Int32 `boil:"asset_id" json:"asset_id,omitempty" toml:"asset_id" yaml:"asset_id,omitempty"`
-	CreatedAt        null.Time  `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	ModifiedAt       null.Time  `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
 	LatestStatusCode null.Int32 `boil:"latest_status_code" json:"latest_status_code,omitempty" toml:"latest_status_code" yaml:"latest_status_code,omitempty"`
 
 	R *assetR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,50 +38,69 @@ type Asset struct {
 }
 
 var AssetColumns = struct {
-	ID               string
+	AssetID          string
 	ConfigurationID  string
 	ProjectID        string
 	GlobalAssetID    string
 	DevEui           string
 	AppID            string
-	AssetID          string
-	CreatedAt        string
+	ModifiedAt       string
 	LatestStatusCode string
 }{
-	ID:               "id",
+	AssetID:          "asset_id",
 	ConfigurationID:  "configuration_id",
 	ProjectID:        "project_id",
 	GlobalAssetID:    "global_asset_id",
 	DevEui:           "dev_eui",
 	AppID:            "app_id",
-	AssetID:          "asset_id",
-	CreatedAt:        "created_at",
+	ModifiedAt:       "modified_at",
 	LatestStatusCode: "latest_status_code",
 }
 
 var AssetTableColumns = struct {
-	ID               string
+	AssetID          string
 	ConfigurationID  string
 	ProjectID        string
 	GlobalAssetID    string
 	DevEui           string
 	AppID            string
-	AssetID          string
-	CreatedAt        string
+	ModifiedAt       string
 	LatestStatusCode string
 }{
-	ID:               "asset.id",
+	AssetID:          "asset.asset_id",
 	ConfigurationID:  "asset.configuration_id",
 	ProjectID:        "asset.project_id",
 	GlobalAssetID:    "asset.global_asset_id",
 	DevEui:           "asset.dev_eui",
 	AppID:            "asset.app_id",
-	AssetID:          "asset.asset_id",
-	CreatedAt:        "asset.created_at",
+	ModifiedAt:       "asset.modified_at",
 	LatestStatusCode: "asset.latest_status_code",
 }
 
 // Generated where
+
+type whereHelperint32 struct{ field string }
+
+func (w whereHelperint32) EQ(x int32) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint32) NEQ(x int32) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint32) LT(x int32) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint32) LTE(x int32) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint32) GT(x int32) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint32) GTE(x int32) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint32) IN(slice []int32) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelperint32) NIN(slice []int32) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
 
 type whereHelperint64 struct{ field string }
 
@@ -134,6 +152,30 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
+type whereHelpernull_Time struct{ field string }
+
+func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 type whereHelpernull_Int32 struct{ field string }
 
 func (w whereHelpernull_Int32) EQ(x null.Int32) qm.QueryMod {
@@ -172,49 +214,23 @@ func (w whereHelpernull_Int32) NIN(slice []int32) qm.QueryMod {
 func (w whereHelpernull_Int32) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
 func (w whereHelpernull_Int32) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
-type whereHelpernull_Time struct{ field string }
-
-func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-
 var AssetWhere = struct {
-	ID               whereHelperint64
+	AssetID          whereHelperint32
 	ConfigurationID  whereHelperint64
 	ProjectID        whereHelperstring
 	GlobalAssetID    whereHelperstring
 	DevEui           whereHelperstring
 	AppID            whereHelperstring
-	AssetID          whereHelpernull_Int32
-	CreatedAt        whereHelpernull_Time
+	ModifiedAt       whereHelpernull_Time
 	LatestStatusCode whereHelpernull_Int32
 }{
-	ID:               whereHelperint64{field: "\"loriot_io\".\"asset\".\"id\""},
+	AssetID:          whereHelperint32{field: "\"loriot_io\".\"asset\".\"asset_id\""},
 	ConfigurationID:  whereHelperint64{field: "\"loriot_io\".\"asset\".\"configuration_id\""},
 	ProjectID:        whereHelperstring{field: "\"loriot_io\".\"asset\".\"project_id\""},
 	GlobalAssetID:    whereHelperstring{field: "\"loriot_io\".\"asset\".\"global_asset_id\""},
 	DevEui:           whereHelperstring{field: "\"loriot_io\".\"asset\".\"dev_eui\""},
 	AppID:            whereHelperstring{field: "\"loriot_io\".\"asset\".\"app_id\""},
-	AssetID:          whereHelpernull_Int32{field: "\"loriot_io\".\"asset\".\"asset_id\""},
-	CreatedAt:        whereHelpernull_Time{field: "\"loriot_io\".\"asset\".\"created_at\""},
+	ModifiedAt:       whereHelpernull_Time{field: "\"loriot_io\".\"asset\".\"modified_at\""},
 	LatestStatusCode: whereHelpernull_Int32{field: "\"loriot_io\".\"asset\".\"latest_status_code\""},
 }
 
@@ -246,10 +262,10 @@ func (r *assetR) GetConfiguration() *Configuration {
 type assetL struct{}
 
 var (
-	assetAllColumns            = []string{"id", "configuration_id", "project_id", "global_asset_id", "dev_eui", "app_id", "asset_id", "created_at", "latest_status_code"}
-	assetColumnsWithoutDefault = []string{"project_id", "global_asset_id", "dev_eui", "app_id"}
-	assetColumnsWithDefault    = []string{"id", "configuration_id", "asset_id", "created_at", "latest_status_code"}
-	assetPrimaryKeyColumns     = []string{"id"}
+	assetAllColumns            = []string{"asset_id", "configuration_id", "project_id", "global_asset_id", "dev_eui", "app_id", "modified_at", "latest_status_code"}
+	assetColumnsWithoutDefault = []string{"asset_id", "project_id", "global_asset_id", "dev_eui", "app_id"}
+	assetColumnsWithDefault    = []string{"configuration_id", "modified_at", "latest_status_code"}
+	assetPrimaryKeyColumns     = []string{"asset_id"}
 	assetGeneratedColumns      = []string{}
 )
 
@@ -733,7 +749,7 @@ func (o *Asset) SetConfiguration(ctx context.Context, exec boil.ContextExecutor,
 		strmangle.SetParamNames("\"", "\"", 1, []string{"configuration_id"}),
 		strmangle.WhereClause("\"", "\"", 2, assetPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ID}
+	values := []interface{}{related.ID, o.AssetID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -776,13 +792,13 @@ func Assets(mods ...qm.QueryMod) assetQuery {
 }
 
 // FindAssetG retrieves a single record by ID.
-func FindAssetG(ctx context.Context, iD int64, selectCols ...string) (*Asset, error) {
-	return FindAsset(ctx, boil.GetContextDB(), iD, selectCols...)
+func FindAssetG(ctx context.Context, assetID int32, selectCols ...string) (*Asset, error) {
+	return FindAsset(ctx, boil.GetContextDB(), assetID, selectCols...)
 }
 
 // FindAsset retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindAsset(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*Asset, error) {
+func FindAsset(ctx context.Context, exec boil.ContextExecutor, assetID int32, selectCols ...string) (*Asset, error) {
 	assetObj := &Asset{}
 
 	sel := "*"
@@ -790,10 +806,10 @@ func FindAsset(ctx context.Context, exec boil.ContextExecutor, iD int64, selectC
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"loriot_io\".\"asset\" where \"id\"=$1", sel,
+		"select %s from \"loriot_io\".\"asset\" where \"asset_id\"=$1", sel,
 	)
 
-	q := queries.Raw(query, iD)
+	q := queries.Raw(query, assetID)
 
 	err := q.Bind(ctx, exec, assetObj)
 	if err != nil {
@@ -823,13 +839,6 @@ func (o *Asset) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 	}
 
 	var err error
-	if !boil.TimestampsAreSkipped(ctx) {
-		currTime := time.Now().In(boil.GetLocation())
-
-		if queries.MustTime(o.CreatedAt).IsZero() {
-			queries.SetScanner(&o.CreatedAt, currTime)
-		}
-	}
 
 	if err := o.doBeforeInsertHooks(ctx, exec); err != nil {
 		return err
@@ -1056,13 +1065,6 @@ func (o *Asset) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnC
 	if o == nil {
 		return errors.New("appdb: no asset provided for upsert")
 	}
-	if !boil.TimestampsAreSkipped(ctx) {
-		currTime := time.Now().In(boil.GetLocation())
-
-		if queries.MustTime(o.CreatedAt).IsZero() {
-			queries.SetScanner(&o.CreatedAt, currTime)
-		}
-	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
 		return err
@@ -1197,7 +1199,7 @@ func (o *Asset) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, e
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), assetPrimaryKeyMapping)
-	sql := "DELETE FROM \"loriot_io\".\"asset\" WHERE \"id\"=$1"
+	sql := "DELETE FROM \"loriot_io\".\"asset\" WHERE \"asset_id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1312,7 +1314,7 @@ func (o *Asset) ReloadG(ctx context.Context) error {
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Asset) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindAsset(ctx, exec, o.ID)
+	ret, err := FindAsset(ctx, exec, o.AssetID)
 	if err != nil {
 		return err
 	}
@@ -1361,21 +1363,21 @@ func (o *AssetSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) e
 }
 
 // AssetExistsG checks if the Asset row exists.
-func AssetExistsG(ctx context.Context, iD int64) (bool, error) {
-	return AssetExists(ctx, boil.GetContextDB(), iD)
+func AssetExistsG(ctx context.Context, assetID int32) (bool, error) {
+	return AssetExists(ctx, boil.GetContextDB(), assetID)
 }
 
 // AssetExists checks if the Asset row exists.
-func AssetExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
+func AssetExists(ctx context.Context, exec boil.ContextExecutor, assetID int32) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"loriot_io\".\"asset\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"loriot_io\".\"asset\" where \"asset_id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD)
+		fmt.Fprintln(writer, assetID)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD)
+	row := exec.QueryRowContext(ctx, sql, assetID)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1387,5 +1389,5 @@ func AssetExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool
 
 // Exists checks if the Asset row exists.
 func (o *Asset) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return AssetExists(ctx, exec, o.ID)
+	return AssetExists(ctx, exec, o.AssetID)
 }

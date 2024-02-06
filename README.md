@@ -1,11 +1,10 @@
-# App Template
+# Eliona app to access Loriot.io to handle LoRaWAN devices
 
-This template is a part of the Eliona App SDK. It can be used to create an app stub for an Eliona environment.
+This app connects [Loriot.io](https://www.loriot.io) network using the [API](https://docs.loriot.io/display/LNS/User+API+7.0) and synchronize information about LoRaWAN devices and the corresponding Eliona assets.
 
 ## Configuration
 
 The app needs environment variables and database tables for configuration. To edit the database tables the app provides an own API access.
-
 
 ### Registration in Eliona ###
 
@@ -13,10 +12,7 @@ To start and initialize an app in an Eliona environment, the app has to be regis
 
 This initialization can be handled by the `reset.sql` script.
 
-
 ### Environment variables
-
-<mark>Todo: Describe further environment variables tables the app needs for configuration</mark>
 
 - `CONNECTION_STRING`: configures the [Eliona database](https://github.com/eliona-smart-building-assistant/go-eliona/tree/main/db). Otherwise, the app can't be initialized and started. (e.g. `postgres://user:pass@localhost:5432/iot`)
 
@@ -24,22 +20,17 @@ This initialization can be handled by the `reset.sql` script.
 
 - `API_TOKEN`: defines the secret to authenticate the app and access the Eliona API.
 
-- `API_SERVER_PORT`(optional): define the port the API server listens. The default value is Port `3000`. <mark>Todo: Decide if the app needs its own API. If so, an API server have to implemented and the port have to be configurable.</mark>
+- `API_SERVER_PORT`(optional): define the port the API server listens. The default value is Port `3000`.
 
 - `LOG_LEVEL`(optional): defines the minimum level that should be [logged](https://github.com/eliona-smart-building-assistant/go-utils/blob/main/log/README.md). The default level is `info`.
 
 ### Database tables ###
 
-<mark>Todo: Describe other tables if the app needs them.</mark>
+The app requires configuration data that remains in the database. To do this, the app creates its own database schema `loriot-io` during initialization. To modify and handle the configuration data the app provides an API access. Have a look at the [API specification](https://eliona-smart-building-assistant.github.io/open-api-docs/?https://raw.githubusercontent.com/eliona-smart-building-assistant/loriot-io-app/develop/openapi.yaml) how the configuration tables should be used.
 
-The app requires configuration data that remains in the database. To do this, the app creates its own database schema `template` during initialization. To modify and handle the configuration data the app provides an API access. Have a look at the [API specification](https://eliona-smart-building-assistant.github.io/open-api-docs/?https://raw.githubusercontent.com/eliona-smart-building-assistant/app-template/develop/openapi.yaml) how the configuration tables should be used.
+- `loriot_io.configuration`: Contains configuration of the app. Editable through the API.
 
-- `template.configuration`: Contains configuration of the app. Editable through the API.
-
-- `template.asset`: Provides asset mapping. Maps broker's asset IDs to Eliona asset IDs.
-
-**Generation**: to generate access method to database see Generation section below.
-
+- `loriot_io.asset`: Provides asset mapping. Maps LoRaWAN devices to Eliona asset IDs.
 
 ## References
 
@@ -47,35 +38,43 @@ The app requires configuration data that remains in the database. To do this, th
 
 The app provides its own API to access configuration data and other functions. The full description of the API is defined in the `openapi.yaml` OpenAPI definition file.
 
-- [API Reference](https://eliona-smart-building-assistant.github.io/open-api-docs/?https://raw.githubusercontent.com/eliona-smart-building-assistant/app-template/develop/openapi.yaml) shows details of the API
+- [API Reference](https://eliona-smart-building-assistant.github.io/open-api-docs/?https://raw.githubusercontent.com/eliona-smart-building-assistant/loriot-io-app/develop/openapi.yaml) shows details of the API
 
-**Generation**: to generate api server stub see Generation section below.
+### Configuring the app ###
 
+To use the app it is necessary to create at least one configuration. A configuration points to one Loriot.io network API endpoint.
+Also, a configuration defines at least one Eliona project ID for automatic asset creation.
 
-### Eliona assets ###
+A minimum configuration that can used by the app's API endpoint `POST /configs` is:
 
-This app creates Eliona asset types and attribute sets during initialization.
+```json
+{
+    "apiBaseUrl": "https://eu1.loriot.io",
+    "apiToken": "secret",
+    "enable": true,
+    "projectIDs": ["10"]
+}
+```
 
-The data is written for each device, structured into different subtypes of Elinoa assets. The following subtypes are defined:
+### Creating new LoRaWAN devices ###
 
-- `Info`: Static data which provides information about a device like address and firmware info.
-- `Status`: Device status information, like battery level.
-- `Input`: Current values reported by sensors.
-- `Output`: Values that are to be passed back to the provider.
+The app can handle the creation of new LoRaWAN devices with the `PUT /devices` endpoint. For devices created with this endpoint
+a corresponding asset in Eliona is created for each Eliona project defined in the configuration.
 
-### Continuous asset creation ###
+Minimum example to create a new device via OTAA v1.0 is:
 
-Assets for all devices connected to the Template account are created automatically when the configuration is added.
-
-To select which assets to create, a filter could be specified in config. The schema of the filter is defined in the `openapi.yaml` file.
-
-Possible filter parameters are defined in the structs in `broker.go` and marked with `eliona:"attribute_name,filterable"` field tag.
-
-To avoid conflicts, the Global Asset Identifier is a manufacturer's ID prefixed with asset type name as a namespace.
-
-### Dashboard ###
-
-An example dashboard meant for a quick start or showcasing the apps abilities can be obtained by accessing the dashboard endpoint defined in the `openapi.yaml` file.
+```json
+{
+    "devEUI": "0123456789ABCDEF",
+    "appID": "1234ABCD",
+    "assetTypeName": "Device",
+    "configID": "1",
+    "title": "LoRaWAN test device",
+    "description": "This is a LoRaWAN test device",
+    "appEUI": "1000000000000000",
+    "appKey": "secret"
+}
+```
 
 ## Tools
 
@@ -96,7 +95,3 @@ For the database access [SQLBoiler](https://github.com/volatiletech/sqlboiler) i
 .\generate-db.cmd # Windows
 ./generate-db.sh # Linux
 ```
-
-### Generate asset type descriptions ###
-
-For generating asset type descriptions from field-tag-annotated structs, [asse-from-struct tool](https://github.com/eliona-smart-building-assistant/dev-utilities) can be used.

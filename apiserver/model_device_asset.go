@@ -32,13 +32,13 @@ type DeviceAsset struct {
 	DevEUI string `json:"devEUI,omitempty"`
 
 	// corresponding asset ID
-	AssetID *int32 `json:"assetID,omitempty"`
+	AssetID int32 `json:"assetID,omitempty"`
 
 	// Latest status code 201 created, 200 updated, 204 deleted
 	LatestStatusCode *int32 `json:"latestStatusCode,omitempty"`
 
-	// Timestamp of the latest change action
-	ChangedAt *time.Time `json:"changedAt,omitempty"`
+	// Timestamp of the latest create, update or delete action
+	ModifiedAt *time.Time `json:"modifiedAt,omitempty"`
 }
 
 // AssertDeviceAssetRequired checks if the required fields are not zero-ed

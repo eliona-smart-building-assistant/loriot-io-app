@@ -18,15 +18,18 @@ package eliona
 import (
 	"context"
 	"fmt"
+	"github.com/eliona-smart-building-assistant/go-eliona/client"
 	"github.com/eliona-smart-building-assistant/go-utils/common"
 	"github.com/eliona-smart-building-assistant/go-utils/http"
 	"loriot-io/apiserver"
 	"time"
 
 	api "github.com/eliona-smart-building-assistant/go-eliona-api-client/v2"
-	"github.com/eliona-smart-building-assistant/go-eliona/client"
-	"github.com/eliona-smart-building-assistant/go-utils/log"
 	"github.com/gorilla/websocket"
+)
+
+const (
+	RootAssetType = "loriot_io_root"
 )
 
 type Asset interface {
@@ -34,36 +37,56 @@ type Asset interface {
 	Id() string
 }
 
-//
-// Todo: Define anything for eliona like writing assets or heap data
-//
-
-func notifyUser(userId string, projectId string, assetsCreated int) error {
-	receipt, _, err := client.NewClient().CommunicationAPI.
-		PostNotification(client.AuthenticationContext()).
-		Notification(
-			api.Notification{
-				User:      userId,
-				ProjectId: *api.NewNullableString(&projectId),
-				Message: *api.NewNullableTranslation(&api.Translation{
-					De: api.PtrString(fmt.Sprintf("Template App hat %d neue Assets angelegt. Diese sind nun im Asset-Management verfügbar.", assetsCreated)),
-					En: api.PtrString(fmt.Sprintf("Template app added %v new assets. They are now available in Asset Management.", assetsCreated)),
-				}),
-			}).
-		Execute()
-	log.Debug("eliona", "posted notification about CAC: %v", receipt)
-	if err != nil {
-		return fmt.Errorf("posting CAC notification: %v", err)
-	}
-	return nil
+// UpsertAssetWithPutDeviceRequest creates a new or gets an existing Eliona asset. Returns the new or existing asset or error if failed.
+func UpsertAssetWithPutDeviceRequest(ctx context.Context, projectID string, putDeviceRequest apiserver.PutDeviceRequest) (*api.Asset, error) {
+	return upsertAssetByDeviceId(ctx, api.Asset{
+		DeviceIds: []string{
+			putDeviceRequest.DevEUI,
+		},
+		ProjectId:             projectID,
+		GlobalAssetIdentifier: fmt.Sprintf("%s %s", putDeviceRequest.Title, putDeviceRequest.DevEUI[len(putDeviceRequest.DevEUI)-4:]),
+		Name:                  *api.NewNullableString(&putDeviceRequest.Title),
+		Description:           *api.NewNullableString(&putDeviceRequest.Description),
+		AssetType:             putDeviceRequest.AssetTypeName,
+	})
 }
 
-// UpsertAsset creates a new or gets an existing Eliona asset. Returns the new or existing asset or error if failed.
-func UpsertAsset(ctx context.Context, projectID string, postDeviceRequest apiserver.PostDeviceRequest) (api.Asset, error) {
+func upsertAssetByDeviceId(ctx context.Context, asset api.Asset) (*api.Asset, error) {
+	rootAsset, err := upsertRootAsset(asset.ProjectId)
+	if err != nil || rootAsset == nil {
+		return rootAsset, err
+	}
+	asset.ParentLocationalAssetId = rootAsset.Id
+	assetReturn, _, err := client.NewClient().AssetsAPI.
+		PutAsset(client.AuthenticationContext()).
+		IdentifyBy("deviceId").
+		Asset(asset).
+		Execute()
+	return assetReturn, err
+}
 
-	// todo: implement asset insert or update to Eliona
-
-	return api.Asset{}, nil
+func upsertRootAsset(projectID string) (*api.Asset, error) {
+	assets, _, err := client.NewClient().AssetsAPI.
+		GetAssets(client.AuthenticationContext()).
+		AssetTypeName(RootAssetType).
+		Execute()
+	if err != nil {
+		return nil, err
+	}
+	if len(assets) > 0 {
+		return common.Ptr(assets[0]), nil
+	}
+	asset, _, err := client.NewClient().AssetsAPI.
+		PutAsset(client.AuthenticationContext()).
+		Asset(
+			api.Asset{
+				ProjectId:             projectID,
+				GlobalAssetIdentifier: fmt.Sprintf("%s %s", RootAssetType, projectID),
+				Name:                  *api.NewNullableString(common.Ptr("Loriot.io")),
+				AssetType:             RootAssetType,
+			}).
+		Execute()
+	return asset, err
 }
 
 func AssetFromAssetListen(assetListen api.AssetListen) (api.Asset, int32) {

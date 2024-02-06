@@ -16,8 +16,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/eliona-smart-building-assistant/go-eliona/app"
 	"github.com/eliona-smart-building-assistant/go-eliona/asset"
 	"github.com/eliona-smart-building-assistant/go-eliona/dashboard"
@@ -25,6 +23,8 @@ import (
 	"github.com/eliona-smart-building-assistant/go-utils/db"
 	"github.com/eliona-smart-building-assistant/go-utils/log"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"loriot-io/apiservices"
+	broker "loriot-io/broker"
 )
 
 // The main function starts the app by starting all services necessary for this app and waits
@@ -48,16 +48,15 @@ func main() {
 
 	// Init the app before the first run.
 	app.Init(db.Pool(), app.AppName(),
-		app.ExecSqlFile("conf/init.sql"),
+		app.ExecSqlFile("resources/init.sql"),
 		asset.InitAssetTypeFiles("resources/asset-types/*.json"),
 		dashboard.InitWidgetTypeFiles("resources/widget-types/*.json"),
 	)
 
 	// Starting the service to collect the data for this app.
 	common.WaitForWithOs(
-		common.Loop(collectData, time.Second),
-		listenApi,
-		listenForAssetChanges,
+		apiservices.ListenApi,
+		broker.ListenForAssetChanges,
 	)
 
 	log.Info("main", "Terminate the app.")

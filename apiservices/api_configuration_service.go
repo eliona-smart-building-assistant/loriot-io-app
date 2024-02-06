@@ -19,7 +19,7 @@ import (
 	"context"
 	"errors"
 	"loriot-io/apiserver"
-	"loriot-io/conf"
+	"loriot-io/app"
 	"net/http"
 )
 
