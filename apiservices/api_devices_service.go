@@ -30,7 +30,7 @@ func NewDevicesAPIService() apiserver.DevicesAPIServicer {
 
 // GetDevices - Get LoRaWAN devices
 func (s *DevicesAPIService) GetDevices(ctx context.Context) (apiserver.ImplResponse, error) {
-	devices, err := conf.GetDeviceAssets(ctx)
+	devices, err := app.GetDeviceAssets(ctx)
 	if err != nil {
 		return apiserver.ImplResponse{}, err
 	}

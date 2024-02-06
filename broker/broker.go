@@ -46,7 +46,7 @@ func ListenForAssetChanges() {
 			asset, statusCode := eliona.AssetFromAssetListen(assetListen)
 
 			// Try to get apps information about asset device
-			dbAssetDevice, err := conf.GetDbDeviceAssetById(asset.Id.Get())
+			dbAssetDevice, err := app.GetDbDeviceAssetById(asset.Id.Get())
 			if err != nil {
 				log.Error("eliona", "Error selecting device asset: %v", err)
 			}
@@ -64,18 +64,18 @@ func ListenForAssetChanges() {
 			if devEUI != nil {
 				log.Info("eliona", "Asset %v changed: %d", asset.Id, statusCode)
 
-				configs, err := conf.GetConfigs(ctx)
+				configs, err := app.GetConfigs(ctx)
 				if err != nil {
 					log.Error("eliona", "Error getting configs: %v", err)
 					continue
 				}
 				for _, config := range configs {
-					if !conf.IsConfigEnabled(config) {
+					if !app.IsConfigEnabled(config) {
 						continue
 					}
 
 					// check if project is defined for this asset
-					if !sliceContains(conf.ProjIds(config), asset.ProjectId) {
+					if !sliceContains(app.ProjIds(config), asset.ProjectId) {
 						log.Info("asset", "Modified asset with project ID %s doesn't matches project IDs from configuration %d", asset.ProjectId, config.Id)
 						continue
 					}
@@ -87,7 +87,7 @@ func ListenForAssetChanges() {
 					// Perform creation action.
 					if statusCode == http.StatusCreated {
 						// at the moment no further action must be performed if an asset is recreated
-						conf.NotifyUser(config.UserId, &asset.ProjectId, &api.Translation{
+						app.NotifyUser(config.UserId, &asset.ProjectId, &api.Translation{
 							De: api.PtrString(fmt.Sprintf("Loriot App hat Gerät '%s' und Asset '%d' angelegt.", *devEUI, *asset.Id.Get())),
 							En: api.PtrString(fmt.Sprintf("Loriot app created device '%s' and asset '%d'.", *devEUI, *asset.Id.Get())),
 						})
@@ -97,7 +97,7 @@ func ListenForAssetChanges() {
 					if statusCode == http.StatusOK {
 						device, err = loriot.UpdateDevice(ctx, config, *devEUI, asset)
 						if err == nil {
-							conf.NotifyUser(config.UserId, &asset.ProjectId, &api.Translation{
+							app.NotifyUser(config.UserId, &asset.ProjectId, &api.Translation{
 								De: api.PtrString(fmt.Sprintf("Loriot App hat Gerät '%s' und Asset '%d' geändert.", *devEUI, *asset.Id.Get())),
 								En: api.PtrString(fmt.Sprintf("Loriot app updated device '%s' and asset '%d'.", *devEUI, *asset.Id.Get())),
 							})
@@ -108,7 +108,7 @@ func ListenForAssetChanges() {
 					if statusCode == http.StatusNoContent {
 						device, err = loriot.DeleteDevice(ctx, config, *devEUI)
 						if err == nil {
-							conf.NotifyUser(config.UserId, &asset.ProjectId, &api.Translation{
+							app.NotifyUser(config.UserId, &asset.ProjectId, &api.Translation{
 								De: api.PtrString(fmt.Sprintf("Loriot App hat Gerät '%s' und Asset '%d' gelöscht.", *devEUI, *asset.Id.Get())),
 								En: api.PtrString(fmt.Sprintf("Loriot app deleted device '%s' and asset '%d'.", *devEUI, *asset.Id.Get())),
 							})
@@ -123,7 +123,7 @@ func ListenForAssetChanges() {
 						continue
 					}
 					log.Info("loriot", "Device %s operation %d successfully performed.", *devEUI, statusCode)
-					_, err = conf.UpsertDeviceAsset(ctx, config, *device, asset, statusCode)
+					_, err = app.UpsertDeviceAsset(ctx, config, *device, asset, statusCode)
 					if err != nil {
 						log.Error("app", "Error updating app's device database for operation %d for device %s: %v", statusCode, *devEUI, err)
 					}
@@ -143,7 +143,7 @@ func UpsertDevice(ctx context.Context, putDeviceRequest apiserver.PutDeviceReque
 	var deviceAssets []apiserver.DeviceAsset
 
 	// For all configs update device and asset
-	configs, err := conf.GetConfigs(ctx)
+	configs, err := app.GetConfigs(ctx)
 	if len(configs) == 0 {
 		return nil, fmt.Errorf("no configuration found")
 	}
@@ -151,7 +151,7 @@ func UpsertDevice(ctx context.Context, putDeviceRequest apiserver.PutDeviceReque
 		return deviceAssets, err
 	}
 	for _, config := range configs {
-		if !conf.IsConfigEnabled(config) {
+		if !app.IsConfigEnabled(config) {
 			continue
 		}
 
@@ -165,7 +165,7 @@ func UpsertDevice(ctx context.Context, putDeviceRequest apiserver.PutDeviceReque
 		}
 
 		// For all project IDs upserts the corresponding asset
-		for _, projectID := range conf.ProjIds(config) {
+		for _, projectID := range app.ProjIds(config) {
 
 			asset, err := eliona.UpsertAssetWithPutDeviceRequest(ctx, projectID, putDeviceRequest)
 			if err != nil {
@@ -176,7 +176,7 @@ func UpsertDevice(ctx context.Context, putDeviceRequest apiserver.PutDeviceReque
 			}
 
 			// remember the asset info inside app
-			deviceAsset, err := conf.UpsertDeviceAsset(ctx, config, *device, *asset, 201)
+			deviceAsset, err := app.UpsertDeviceAsset(ctx, config, *device, *asset, 201)
 			if err != nil {
 				return deviceAssets, err
 			}

@@ -35,7 +35,7 @@ func NewConfigurationApiService() apiserver.ConfigurationAPIServicer {
 }
 
 func (s *ConfigurationApiService) GetConfigurations(ctx context.Context) (apiserver.ImplResponse, error) {
-	configs, err := conf.GetConfigs(ctx)
+	configs, err := app.GetConfigs(ctx)
 	if err != nil {
 		return apiserver.ImplResponse{Code: http.StatusInternalServerError}, err
 	}
@@ -43,7 +43,7 @@ func (s *ConfigurationApiService) GetConfigurations(ctx context.Context) (apiser
 }
 
 func (s *ConfigurationApiService) PostConfiguration(ctx context.Context, config apiserver.Configuration) (apiserver.ImplResponse, error) {
-	insertedConfig, err := conf.InsertConfig(ctx, config)
+	insertedConfig, err := app.InsertConfig(ctx, config)
 	if err != nil {
 		return apiserver.ImplResponse{Code: http.StatusInternalServerError}, err
 	}
@@ -51,8 +51,8 @@ func (s *ConfigurationApiService) PostConfiguration(ctx context.Context, config 
 }
 
 func (s *ConfigurationApiService) GetConfigurationById(ctx context.Context, configId int64) (apiserver.ImplResponse, error) {
-	config, err := conf.GetConfig(ctx, configId)
-	if errors.Is(err, conf.ErrBadRequest) {
+	config, err := app.GetConfig(ctx, configId)
+	if errors.Is(err, app.ErrBadRequest) {
 		return apiserver.ImplResponse{Code: http.StatusBadRequest}, nil
 	}
 	if err != nil {
@@ -63,7 +63,7 @@ func (s *ConfigurationApiService) GetConfigurationById(ctx context.Context, conf
 
 func (s *ConfigurationApiService) PutConfigurationById(ctx context.Context, configId int64, config apiserver.Configuration) (apiserver.ImplResponse, error) {
 	config.Id = &configId
-	upsertedConfig, err := conf.UpsertConfig(ctx, config)
+	upsertedConfig, err := app.UpsertConfig(ctx, config)
 	if err != nil {
 		return apiserver.ImplResponse{Code: http.StatusInternalServerError}, err
 	}
@@ -71,8 +71,8 @@ func (s *ConfigurationApiService) PutConfigurationById(ctx context.Context, conf
 }
 
 func (s *ConfigurationApiService) DeleteConfigurationById(ctx context.Context, configId int64) (apiserver.ImplResponse, error) {
-	err := conf.DeleteConfig(ctx, configId)
-	if errors.Is(err, conf.ErrBadRequest) {
+	err := app.DeleteConfig(ctx, configId)
+	if errors.Is(err, app.ErrBadRequest) {
 		return apiserver.ImplResponse{Code: http.StatusBadRequest}, nil
 	}
 	if err != nil {
