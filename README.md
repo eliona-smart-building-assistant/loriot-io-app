@@ -68,7 +68,7 @@ Minimum example to create a new device via OTAA v1.0 is:
     "devEUI": "0123456789ABCDEF",
     "appID": "1234ABCD",
     "assetTypeName": "Device",
-    "configID": "1",
+    "configID": 1,
     "title": "LoRaWAN test device",
     "description": "This is a LoRaWAN test device",
     "appEUI": "1000000000000000",

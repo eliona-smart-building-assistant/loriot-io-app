@@ -21,7 +21,7 @@ type NewDeviceAbp10 struct {
 	AssetTypeName string `json:"assetTypeName"`
 
 	// Configuration id to define the target Loriot.io. If empty all configs are used.
-	ConfigID string `json:"configID,omitempty"`
+	ConfigID *int32 `json:"configID,omitempty"`
 
 	// Title for the new device and asset
 	Title string `json:"title,omitempty"`
