@@ -326,7 +326,8 @@ components:
           type: string
           description: Name of the asset type to create corresponding asset in Eliona
         configID:
-          type: string
+          type: integer
+          nullable: true
           description: Configuration id to define the target Loriot.io. If empty all configs are used.
         title:
           type: string

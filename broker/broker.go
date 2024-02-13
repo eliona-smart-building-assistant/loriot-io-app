@@ -155,6 +155,10 @@ func UpsertDevice(ctx context.Context, putDeviceRequest apiserver.PutDeviceReque
 			continue
 		}
 
+		if putDeviceRequest.ConfigID != nil && config.Id != nil && int64(*putDeviceRequest.ConfigID) != *config.Id {
+			continue
+		}
+
 		// Upsert device
 		device, err := loriot.UpsertDevice(ctx, config, putDeviceRequest)
 		if err != nil {
