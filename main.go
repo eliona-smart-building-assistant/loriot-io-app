@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"github.com/eliona-smart-building-assistant/go-eliona/app"
 	"github.com/eliona-smart-building-assistant/go-eliona/asset"
 	"github.com/eliona-smart-building-assistant/go-eliona/dashboard"
@@ -46,12 +47,8 @@ func main() {
 	// Necessary to close used init resources, because db.Pool() is used in this app.
 	defer db.ClosePool()
 
-	// Init the app before the first run.
-	app.Init(db.Pool(), app.AppName(),
-		app.ExecSqlFile("resources/init.sql"),
-		asset.InitAssetTypeFiles("resources/asset-types/*.json"),
-		dashboard.InitWidgetTypeFiles("resources/widget-types/*.json"),
-	)
+	// Initialize the app
+	initialization()
 
 	// Starting the service to collect the data for this app.
 	common.WaitForWithOs(
@@ -60,4 +57,19 @@ func main() {
 	)
 
 	log.Info("main", "Terminate the app.")
+}
+
+func initialization() {
+	ctx := context.Background()
+
+	// Necessary to close used init resources
+	conn := db.NewInitConnectionWithContextAndApplicationName(ctx, app.AppName())
+	defer conn.Close(ctx)
+
+	// Init the app before the first run.
+	app.Init(db.Pool(), app.AppName(),
+		app.ExecSqlFile("resources/init.sql"),
+		asset.InitAssetTypeFiles("resources/asset-types/*.json"),
+		dashboard.InitWidgetTypeFiles("resources/widget-types/*.json"),
+	)
 }
