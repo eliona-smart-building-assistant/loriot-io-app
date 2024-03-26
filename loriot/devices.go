@@ -23,6 +23,7 @@ import (
 	"loriot-io/apiserver"
 	http2 "net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/eliona-smart-building-assistant/go-utils/common"
@@ -162,7 +163,7 @@ func getApps(ctx context.Context, config apiserver.Configuration) ([]App, error)
 
 func getDevices(ctx context.Context, config apiserver.Configuration, appId string) ([]Device, error) {
 	var devices []Device
-	devices, err := getFromApi[Device](ctx, config, func(meta Meta) []Device { return meta.Devices }, "/1/nwk/app/%s/devices", appId)
+	devices, err := getFromApi[Device](ctx, config, func(meta Meta) []Device { return meta.Devices }, "/1/nwk/app/%s/devices", strings.ToUpper(appId))
 	for idx, _ := range devices {
 		devices[idx].AppID = appId
 	}
@@ -170,7 +171,7 @@ func getDevices(ctx context.Context, config apiserver.Configuration, appId strin
 }
 
 func getDevice(ctx context.Context, config apiserver.Configuration, appId string, devEUI string) (*Device, error) {
-	request, err := http.NewRequestWithBearer(config.ApiBaseUrl+fmt.Sprintf("/1/nwk/app/%s/device/%s", appId, devEUI), config.ApiToken)
+	request, err := http.NewRequestWithBearer(config.ApiBaseUrl+fmt.Sprintf("/1/nwk/app/%s/device/%s", strings.ToUpper(appId), strings.ToUpper(devEUI)), config.ApiToken)
 	if err != nil {
 		return nil, fmt.Errorf("error creating get request for %s: %w", config.ApiBaseUrl, err)
 	}
@@ -203,7 +204,7 @@ func searchDevice(ctx context.Context, config apiserver.Configuration, devEUI st
 }
 
 func postDeviceForUpdate(ctx context.Context, config apiserver.Configuration, device Device) error {
-	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/device/%s", device.AppID, device.DevEUI)
+	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/device/%s", strings.ToUpper(device.AppID), strings.ToUpper(device.DevEUI))
 	deviceForUpdate := DeviceForUpdate{
 		Title:       device.Title,
 		Description: device.Description,
@@ -220,7 +221,7 @@ func postDeviceForUpdate(ctx context.Context, config apiserver.Configuration, de
 }
 
 func postDeviceForCreate(ctx context.Context, config apiserver.Configuration, putDeviceRequest apiserver.PutDeviceRequest) (*Device, error) {
-	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/devices", putDeviceRequest.AppID)
+	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/devices", strings.ToUpper(putDeviceRequest.AppID))
 	deviceForCreate := DeviceForCreate{
 		DevEUI:      putDeviceRequest.DevEUI,
 		AppEUI:      putDeviceRequest.AppEUI,
@@ -254,7 +255,7 @@ func postDeviceForCreate(ctx context.Context, config apiserver.Configuration, pu
 }
 
 func deleteDevice(ctx context.Context, config apiserver.Configuration, device Device) error {
-	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/device/%s", device.AppID, device.DevEUI)
+	fullUrl := config.ApiBaseUrl + fmt.Sprintf("/1/nwk/app/%s/device/%s", strings.ToUpper(device.AppID), strings.ToUpper(device.DevEUI))
 	request, err := http.NewDeleteRequestWithBearer(fullUrl, config.ApiToken)
 	if err != nil {
 		return fmt.Errorf("error creating delete request for %s: %w", fullUrl, err)
