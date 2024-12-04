@@ -21,7 +21,7 @@ info:
   description: API to access and configure the Loriot.io app
 externalDocs:
   description: Find out more about the Loriot.io app
-  url: https://github.com/eliona-smart-building-assistant/loriot-io-app
+  url: https://doc.eliona.io/collection/v/eliona-english/eliona-apps/apps/loriot.io
 servers:
   - url: "https://{server}/v1"
     variables:
@@ -135,7 +135,6 @@ paths:
         "400":
           description: Bad request
 
-
   /devices:
     get:
       tags:
@@ -156,18 +155,17 @@ paths:
       tags:
         - Devices
       summary: Create or update a LoRaWAN device
-      description:
-        Create or update a LoRaWAN device in Loriot.io, using different protocols like OTAA v1.0, OTAA v1.1, ABP v1.0, or ABP v1.1. This step also creates or updates a related asset in Eliona and connects them. Whether to add a new device or update an existing one in both Loriot.io and Eliona depends on if the device's unique EUI is already known. If the EUI is known, the device or asset gets updated. If not, a new one is created.
+      description: Create or update a LoRaWAN device in Loriot.io, using different protocols like OTAA v1.0, OTAA v1.1, ABP v1.0, or ABP v1.1. This step also creates or updates a related asset in Eliona and connects them. Whether to add a new device or update an existing one in both Loriot.io and Eliona depends on if the device's unique EUI is already known. If the EUI is known, the device or asset gets updated. If not, a new one is created.
       operationId: putDevice
       requestBody:
         content:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/NewDeviceOTAA10'
-                - $ref: '#/components/schemas/NewDeviceOTAA11'
-                - $ref: '#/components/schemas/NewDeviceABP10'
-                - $ref: '#/components/schemas/NewDeviceABP11'
+                - $ref: "#/components/schemas/NewDeviceOTAA10"
+                - $ref: "#/components/schemas/NewDeviceOTAA11"
+                - $ref: "#/components/schemas/NewDeviceABP10"
+                - $ref: "#/components/schemas/NewDeviceABP11"
       responses:
         "200":
           description: Successfully created a LoRaWAN devices and a corresponding Eliona assets
@@ -338,7 +336,7 @@ components:
 
     NewDeviceOTAA10:
       allOf:
-        - $ref: '#/components/schemas/NewDeviceAsset'
+        - $ref: "#/components/schemas/NewDeviceAsset"
         - properties:
             appEUI:
               type: string
@@ -348,7 +346,7 @@ components:
 
     NewDeviceOTAA11:
       allOf:
-        - $ref: '#/components/schemas/NewDeviceAsset'
+        - $ref: "#/components/schemas/NewDeviceAsset"
         - properties:
             joinEUI:
               type: string
@@ -361,7 +359,7 @@ components:
 
     NewDeviceABP10:
       allOf:
-        - $ref: '#/components/schemas/NewDeviceAsset'
+        - $ref: "#/components/schemas/NewDeviceAsset"
         - properties:
             devAddr:
               type: string
@@ -376,7 +374,7 @@ components:
 
     NewDeviceABP11:
       allOf:
-        - $ref: '#/components/schemas/NewDeviceAsset'
+        - $ref: "#/components/schemas/NewDeviceAsset"
         - properties:
             netID:
               type: string
